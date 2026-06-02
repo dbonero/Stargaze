@@ -1,0 +1,135 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Custom scrollbar to keep layout highly integrated */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.6);
+}
+
+.font-display {
+  font-family: "Space Grotesk", sans-serif;
+}
+
+/* Premium Dark Mode overrides */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background-color: #020617; /* slate-950 */
+  color: #f8fafc; /* slate-50 */
+}
+
+/* Override standard white backgrounds with rich slate depths in dark mode */
+.dark .bg-white {
+  background-color: #0f172a !important; /* slate-900 */
+  color: #f1f5f9 !important; /* slate-100 */
+}
+
+/* Override light grey backgrounds with slate shades */
+.dark .bg-gray-50, 
+.dark .bg-slate-50, 
+.dark .bg-slate-50\/40, 
+.dark .bg-slate-50\/30,
+.dark .bg-slate-50\/20,
+.dark .bg-gray-50\/55,
+.dark .bg-white\/80 {
+  background-color: rgba(30, 41, 59, 0.7) !important; /* slate-800 with transparency */
+  color: #e2e8f0 !important; /* slate-200 */
+}
+
+/* Active buttons and tabs hover/highlight backgrounds */
+.dark .hover\:bg-gray-50:hover, 
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-gray-100:hover,
+.dark .hover\:bg-slate-100:hover {
+  background-color: rgba(51, 65, 85, 0.65) !important; /* slate-700 */
+  color: #ffffff !important;
+}
+
+/* Light gray borders in cards and tabs styled to slate outlines */
+.dark .border-gray-55,
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-50,
+.dark .border-slate-100,
+.dark .border-slate-200,
+.dark .border-slate-300 {
+  border-color: rgba(71, 85, 105, 0.4) !important; /* slate-600 with lower opacity */
+}
+
+/* Standard light texts mapped to dark readable elements */
+.dark .text-slate-800,
+.dark .text-slate-900,
+.dark .text-slate-950,
+.dark .text-black,
+.dark .text-gray-900 {
+  color: #f1f5f9 !important; /* slate-100 */
+}
+
+.dark .text-slate-700,
+.dark .text-gray-700,
+.dark .text-slate-600,
+.dark .text-gray-600 {
+  color: #cbd5e1 !important; /* slate-300 */
+}
+
+.dark .text-slate-550,
+.dark .text-slate-500,
+.dark .text-gray-500,
+.dark .text-gray-400 {
+  color: #94a3b8 !important; /* slate-400 */
+}
+
+/* Direct message mine/theirs, popups, and inputs styling refinement */
+.dark input, 
+.dark textarea, 
+.dark select {
+  background-color: rgba(15, 23, 42, 0.8) !important; /* slate-950 with transparency */
+  color: #ffffff !important;
+  border-color: rgba(71, 85, 105, 0.6) !important;
+}
+
+.dark input::placeholder, 
+.dark textarea::placeholder {
+  color: #64748b !important; /* slate-500 */
+}
+
+/* Comment blocks feed card styling */
+.dark .divide-gray-50 > * + *,
+.dark .divide-slate-100 > * + * {
+  border-color: rgba(71, 85, 105, 0.35) !important;
+}
+
+/* Transparent elements inside direct messages and collab playlists */
+.dark .bg-indigo-50 {
+  background-color: rgba(99, 102, 241, 0.1) !important; /* indigo transparency */
+  color: #818cf8 !important; /* indigo neon highlight */
+}
+
+.dark .text-indigo-700,
+.dark .text-indigo-650,
+.dark .text-indigo-600 {
+  color: #a5b4fc !important; /* indigo neon color text */
+}
+
+.dark .border-indigo-200,
+.dark .border-indigo-150 {
+  border-color: rgba(99, 102, 241, 0.3) !important;
+}
