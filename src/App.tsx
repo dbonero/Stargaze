@@ -273,6 +273,58 @@ export default function App() {
 
   // Navigation active tab index
   const [activeTab, setActiveTab] = useState<"home" | "discover" | "messages" | "analytics" | "profile" | "admin" | "playlists" | "workspace">("home");
+  
+  // PWA (Progressive Web App) Install States
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallBanner, setShowInstallBanner] = useState<boolean>(true); // Default to try showing install action controls
+  const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Detect if already installed & running in PWA standalone window
+    const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true;
+    if (isInStandaloneMode) {
+      setIsAppInstalled(true);
+      setShowInstallBanner(false);
+    }
+
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallBanner(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    const handleAppInstalled = () => {
+      setIsAppInstalled(true);
+      setShowInstallBanner(false);
+      setDeferredPrompt(null);
+      console.log('[PWA Engine] App successfully installed on this phone/computer!');
+    };
+
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  const triggerPwaInstallation = async () => {
+    if (!deferredPrompt) {
+      alert("📲 How to Download & Install:\n\n• ON PHONE (iOS Safari): Click the Share button at the bottom of the screen and select 'Add to Home Screen'.\n• ON PHONE (Android Chrome): Tap the three dots menu at the top-right and select 'Install app'.\n• ON LAPTOP / DESKTOP: Click the small monitor/arrow icon in the browser address bar at the top-right. Or tap 'Download App' within our layout panel!");
+      return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`[PWA Engine] User choice outcome: ${outcome}`);
+    setDeferredPrompt(null);
+    if (outcome === 'accepted') {
+      setIsAppInstalled(true);
+      setShowInstallBanner(false);
+    }
+  };
+
   const [posts, setPosts] = useState<Post[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -953,7 +1005,20 @@ export default function App() {
               )}
             </button>
             
-            
+            {/* Download App/PWA Install Button */}
+            {!isAppInstalled && showInstallBanner && (
+              <button
+                onClick={triggerPwaInstallation}
+                className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-250/70 hover:bg-indigo-150 text-indigo-700 text-[10px] font-bold px-3 py-1.5 rounded-full transition-all active:scale-95 cursor-pointer shrink-0 shadow-xs"
+                title="Download app on Phone or Laptop"
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span>Download App 📱</span>
+              </button>
+            )}
 
 
             {/* Notifications panel toggle button */}
@@ -1142,6 +1207,27 @@ export default function App() {
                 Esc
               </kbd>
             </button>
+
+            {/* Dedicated PWA Smartphone/Laptop Download Panel */}
+            <div className="hidden lg:flex flex-col bg-linear-to-b from-indigo-50/75 to-fuchsia-10/40 dark:from-slate-900/60 dark:to-slate-950/60 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 mt-4 text-xs space-y-2 leading-tight">
+              <div className="flex items-center gap-2">
+                <img src="/logo192.png" alt="" className="w-8 h-8 rounded-lg object-cover shadow-xs border bg-slate-100" />
+                <div>
+                  <h4 className="font-bold text-gray-950 dark:text-white leading-none">ọnọdụ App</h4>
+                  <span className="text-[10px] text-indigo-650 dark:text-indigo-400 font-semibold block mt-1">Multi-device PWA</span>
+                </div>
+              </div>
+              <p className="text-[10px] text-gray-400 leading-relaxed font-sans mt-1">
+                Install ọnọdụ on your smartphone (Android/iOS) or laptop (Mac/Windows) for standalone speeds, direct feed updates, and offline music syncing.
+              </p>
+              <button
+                onClick={triggerPwaInstallation}
+                className="w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-xl transition-all cursor-pointer shadow-md text-[10px] mt-1.5"
+                title="Trigger standalone system installation prompt"
+              >
+                {isAppInstalled ? "App Installed!" : "Install App to Phone/PC 📲"}
+              </button>
+            </div>
 
           </nav>
 

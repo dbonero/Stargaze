@@ -1,0 +1,39 @@
+{
+  "name": "ọnọdụ - Music Alignment Network",
+  "short_name": "ọnọdụ",
+  "description": "Progressive Music Social Network - connect, synchronize, and discover immersive lyrics and melodies with others around the earth.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["music", "social"],
+  "shortcuts": [
+    {
+      "name": "Live Search & Grounded Lyrics",
+      "short_name": "Lyrics Finder",
+      "url": "/?tab=discovery",
+      "description": "Search global songs and fetch grounded lyrics"
+    },
+    {
+      "name": "Direct Messages & Music Groups",
+      "short_name": "Chat Room",
+      "url": "/?tab=messages",
+      "description": "Discuss ideas and chat with peers"
+    }
+  ]
+}
