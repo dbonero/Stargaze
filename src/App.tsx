@@ -8,7 +8,7 @@ import {
   Home, Sparkles, MessageSquare, BarChart3, Shield, Star, Crown, HelpCircle,
   PlusCircle, Heart, Share2, Bookmark, Flame, Image, Search, Bell, Navigation, 
   MapPin, Edit3, Music, Check, CheckCircle, ChevronRight, X, ArrowLeft, ArrowRight, RefreshCw, Disc,
-  ListMusic, Sun, Moon, Cloud, Mail
+  ListMusic, Sun, Moon, Cloud, Mail, Upload
 } from "lucide-react";
 import { Post, Song, User, Comment, Story, Message, Notification, Playlist, MoodType } from "./types";
 import FeedCard from "./components/FeedCard";
@@ -359,6 +359,8 @@ export default function App() {
   const [editBio, setEditBio] = useState("");
   const [editLocation, setEditLocation] = useState("");
   const [editFavoriteSong, setEditFavoriteSong] = useState("");
+  const [editAvatar, setEditAvatar] = useState("");
+  const [editCoverPhoto, setEditCoverPhoto] = useState("");
 
   // Stories View modal
   const [viewingStory, setViewingStory] = useState<Story | null>(null);
@@ -681,12 +683,16 @@ export default function App() {
           bio: editBio || currentUser.bio,
           location: editLocation || currentUser.location,
           favoriteSong: editFavoriteSong || currentUser.favoriteSong,
+          avatar: editAvatar || currentUser.avatar,
+          coverPhoto: editCoverPhoto || currentUser.coverPhoto,
         })
       });
       const updated = await resp.json();
       setCurrentUser(updated);
       setUsers(users.map((u) => u.id === currentUser.id ? updated : u));
       setIsEditingProfile(false);
+      setEditAvatar("");
+      setEditCoverPhoto("");
     } catch {}
   };
 
@@ -934,305 +940,267 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? "dark " : ""}${customBackgroundTheme()} transition-all duration-300 font-sans relative overflow-hidden`}>
+    <div className={`min-h-screen ${isDarkMode ? "dark " : ""}${customBackgroundTheme()} transition-all duration-300 font-sans relative flex text-slate-850 dark:text-slate-100`}>
       
-      {/* Ambient Mood Backdrops (Page dynamic colors reflect our active vibe) */}
+      {/* Ambient Mood Backdrops (Page glows reflect emotional vibe) */}
       <div 
-        className={`absolute top-0 left-1/4 w-96 h-96 rounded-full bg-gradient-to-br ${activeColorTheme.glowClass} filter blur-[120px] opacity-70 dark:opacity-45 pointer-events-none -z-10 transition-all duration-1000 ease-in-out`} 
+        className={`absolute top-0 left-1/4 w-96 h-96 rounded-full bg-gradient-to-br ${activeColorTheme.glowClass} filter blur-[120px] opacity-60 dark:opacity-40 pointer-events-none -z-10 transition-all duration-1000 ease-in-out`} 
       />
       <div 
-        className={`absolute bottom-20 right-1/4 w-96 h-96 rounded-full bg-gradient-to-br ${activeColorTheme.glowClass} filter blur-[140px] opacity-50 dark:opacity-25 pointer-events-none -z-10 transition-all duration-1000 ease-in-out`} 
+        className={`absolute bottom-20 right-1/4 w-96 h-96 rounded-full bg-gradient-to-br ${activeColorTheme.glowClass} filter blur-[140px] opacity-45 dark:opacity-20 pointer-events-none -z-10 transition-all duration-1000 ease-in-out`} 
       />
       
-      {/* Platform Header */}
-      <header className={`sticky top-0 ${isDarkMode ? "bg-slate-900/80 border-slate-850/90 text-white" : "bg-white/80 border-gray-100 text-slate-950"} backdrop-blur-md border-b z-40 transition-colors`}>
-        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
-          
-          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => setActiveTab("home")}>
-            <div className={`bg-gradient-to-tr from-indigo-600 to-${activeColorTheme.colorName}-500 p-2 rounded-2xl shadow-md text-white text-sm shrink-0`}>
-              <Disc className="w-6 h-6 animate-[spin_8s_linear_infinite]" />
-            </div>
-            <div>
-              <h1 className={`font-display font-bold text-xl tracking-tight bg-gradient-to-r ${isDarkMode ? "from-white via-slate-100 to-slate-350" : "from-slate-900 via-indigo-950 to-slate-900"} bg-clip-text text-transparent`}>
-                ọnọdụ
-              </h1>
-              <p className="text-[10px] text-gray-400 font-medium">Emotion-driven playlist feeds</p>
-            </div>
+      {/* 1. Left Sticky Navigation Sidebar (Desktop screens) */}
+      <nav className={`hidden md:flex flex-col w-64 xl:w-72 border-r ${isDarkMode ? "border-slate-800 bg-slate-900" : "border-gray-150 bg-white"} h-screen sticky top-0 px-5 py-6 shrink-0 justify-between select-none z-45 transition-colors`}>
+        
+        <div className="space-y-6">
+          {/* Logo Brand */}
+          <div className="px-3 cursor-pointer" onClick={() => setActiveTab("home")}>
+            <h1 className="font-serif font-extrabold text-[27px] tracking-tight bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 bg-clip-text text-transparent italic select-none">
+              ọnọdụ
+            </h1>
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 font-sans tracking-wide -mt-0.5 font-medium">Emotion-driven playlist feeds</p>
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* Nav Links */}
+          <div className="space-y-1.5">
+            <button 
+              onClick={() => setActiveTab("home")}
+              className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "home" 
+                  ? "bg-slate-100 dark:bg-slate-800 text-slate-950 dark:text-white border-l-[3.5px] border-indigo-600 dark:border-indigo-505 pl-[12.5px]"
+                  : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40"
+              }`}
+            >
+              <Home className="w-5 h-5 stroke-2" />
+              <span>Home Feed</span>
+            </button>
 
-            {/* Page Mood Vibe Selector */}
-            <div className="relative shrink-0 flex items-center">
-              <span className="hidden sm:inline text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider mr-2">Vibe:</span>
+            <button 
+              onClick={() => setActiveTab("discover")}
+              className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "discover" 
+                  ? "bg-slate-100 dark:bg-slate-800 text-slate-950 dark:text-white border-l-[3.5px] border-indigo-600 dark:border-indigo-505 pl-[12.5px]"
+                  : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40"
+              }`}
+            >
+              <Search className="w-5 h-5 stroke-2" />
+              <span>Discover Music</span>
+            </button>
+
+            <button 
+              onClick={() => setActiveTab("messages")}
+              className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "messages" 
+                  ? "bg-slate-100 dark:bg-slate-800 text-slate-950 dark:text-white border-l-[3.5px] border-indigo-600 dark:border-indigo-505 pl-[12.5px]"
+                  : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40"
+              }`}
+            >
               <div className="relative">
-                <select
-                  value={currentDisplayMood}
-                  onChange={(e) => {
-                    const m = e.target.value as MoodType;
-                    setCurrentDisplayMood(m);
-                    setPostMood(m); // Keep post draft mood in sync
-                  }}
-                  className={`appearance-none ${isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-white border-gray-200 text-slate-850"} text-[11px] font-semibold pl-3.5 pr-8 py-1.5 rounded-full cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-505 hover:opacity-90 transition-all shadow-xs`}
-                  title="Your Current Page Vibe"
-                >
-                  {Object.values(MOOD_THEMES).map((theme) => (
-                    <option key={theme.name} value={theme.name} className={isDarkMode ? "bg-slate-900 text-white" : "bg-white text-slate-850"}>
-                      {theme.emoji} {theme.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[8px] opacity-60">
-                  ▼
-                </div>
+                <MessageSquare className="w-5 h-5 stroke-2" />
+                {notifications.some(n => n.type === "message" && !n.read) && (
+                  <span className="absolute top-0 right-0 w-2 h-2 bg-indigo-650 rounded-full" />
+                )}
               </div>
-            </div>
+              <span>Direct Messages</span>
+            </button>
 
-            {/* Dark & White Theme Toggle Button */}
+            <button 
+              onClick={() => setActiveTab("playlists")}
+              className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "playlists" 
+                  ? "bg-slate-100 dark:bg-slate-800 text-slate-950 dark:text-white border-l-[3.5px] border-indigo-600 dark:border-indigo-505 pl-[12.5px]"
+                  : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40"
+              }`}
+            >
+              <ListMusic className="w-5 h-5 stroke-2" />
+              <span>Collab Playlists</span>
+            </button>
+
+            <button 
+              onClick={() => setActiveTab("workspace")}
+              className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "workspace" 
+                  ? "bg-slate-100 dark:bg-slate-800 text-slate-950 dark:text-white border-l-[3.5px] border-indigo-600 dark:border-indigo-505 pl-[12.5px]"
+                  : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40"
+              }`}
+            >
+              <Crown className="w-5 h-5 stroke-2" />
+              <span>Workspace Hub</span>
+            </button>
+
+            <button 
+              onClick={() => setActiveTab("analytics")}
+              className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "analytics" 
+                  ? "bg-slate-100 dark:bg-slate-800 text-slate-950 dark:text-white border-l-[3.5px] border-indigo-600 dark:border-indigo-505 pl-[12.5px]"
+                  : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40"
+              }`}
+            >
+              <BarChart3 className="w-5 h-5 stroke-2" />
+              <span>Mood Analytics</span>
+            </button>
+
+            <button 
+              onClick={() => setActiveTab("profile")}
+              className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "profile" 
+                  ? "bg-slate-100 dark:bg-slate-800 text-slate-950 dark:text-white border-l-[3.5px] border-indigo-600 dark:border-indigo-505 pl-[12.5px]"
+                  : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40"
+              }`}
+            >
+              <img src={currentUser.avatar} alt="" className="w-5 h-5 rounded-full object-cover border border-gray-200 dark:border-slate-800" />
+              <span>My Profile</span>
+            </button>
+
+            {/* Admin Toggle */}
+            <button 
+              onClick={() => setActiveTab("admin")}
+              className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "admin" 
+                  ? "bg-indigo-100 dark:bg-indigo-950 text-indigo-750 dark:text-indigo-400 border-l-[3.5px] border-indigo-600 dark:border-indigo-505 pl-[12.5px]"
+                  : "text-red-500/70 hover:text-red-600 hover:bg-red-500/5 font-semibold"
+              }`}
+            >
+              <Shield className="w-5 h-5 stroke-2" />
+              <span>Admin Panel</span>
+            </button>
+          </div>
+
+          <div className="pt-2">
+            <button 
+              onClick={() => setActiveTab("profile")}
+              className="w-full py-3 px-4 bg-gradient-to-tr from-indigo-600 via-purple-600 to-rose-500 hover:opacity-95 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-2"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Create New Vibe</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Sidebar Footer */}
+        <div className="space-y-4 pt-4 border-t border-gray-150/65 dark:border-slate-800">
+          
+          {/* Quick Dark Toggle */}
+          <div className="flex items-center justify-between px-3 text-xs font-bold text-gray-500 dark:text-gray-400">
+            <span>Dark Appearance</span>
             <button 
               onClick={() => {
                 const ns = !isDarkMode;
                 setIsDarkMode(ns);
                 localStorage.setItem("themeMode", ns ? "dark" : "light");
               }}
-              className={`p-2 rounded-full transition-colors ${isDarkMode ? "text-amber-400 hover:bg-slate-800" : "text-gray-500 hover:bg-slate-100"} cursor-pointer shrink-0`}
-              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              className={`p-1.5 rounded-lg cursor-pointer border ${isDarkMode ? "bg-slate-800 border-slate-705 text-amber-400" : "bg-gray-100 border-gray-205 text-slate-800"}`}
             >
-              {isDarkMode ? (
-                <Sun className="w-4.5 h-4.5 text-amber-400 animate-pulse" />
-              ) : (
-                <Moon className="w-4.5 h-4.5 text-indigo-750" />
-              )}
+              {isDarkMode ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
             </button>
-            
-            {/* Download App/PWA Install Button */}
-            {!isAppInstalled && showInstallBanner && (
-              <button
-                onClick={triggerPwaInstallation}
-                className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-250/70 hover:bg-indigo-150 text-indigo-700 text-[10px] font-bold px-3 py-1.5 rounded-full transition-all active:scale-95 cursor-pointer shrink-0 shadow-xs"
-                title="Download app on Phone or Laptop"
-              >
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                <span>Download App 📱</span>
-              </button>
-            )}
-
-
-            {/* Notifications panel toggle button */}
-            <div className="relative">
-              <button 
-                onClick={() => { setNotificationOpen(!notificationOpen); markAllNotificationsRead(); }}
-                className="text-gray-500 hover:text-slate-900 hover:bg-gray-50 p-2.5 rounded-full relative transition-colors"
-                title="Notifications panel"
-              >
-                <Bell className="w-5 h-5" />
-                {notifications.some((n) => !n.read) && (
-                  <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-indigo-600 rounded-full border-2 border-white ring-2 ring-indigo-50/25 animate-ping" />
-                )}
-              </button>
-
-              {/* Secure Notifications dropdown layout */}
-              {notificationOpen && (
-                <div className="absolute right-0 mt-3 w-80 bg-white border border-gray-100 rounded-3xl shadow-xl py-3 z-50 text-xs transition-transform transform origin-top-right overflow-hidden">
-                  <div className="px-4 py-2 border-b border-gray-50 flex items-center justify-between">
-                    <span className="font-display font-semibold text-gray-900">Notifications</span>
-                    <button onClick={() => setNotificationOpen(false)} className="text-gray-400 hover:text-gray-600 text-[10px]">Close</button>
-                  </div>
-                  <div className="divide-y divide-gray-50 max-h-80 overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <p className="text-xs text-gray-400 p-4 text-center italic">No new actions yet.</p>
-                    ) : (
-                      notifications.map((notif) => (
-                        <div key={notif.id} className="p-3 hover:bg-slate-50/50 flex gap-2.5 items-start">
-                          <img src={notif.senderAvatar} alt="user avatar" className="w-8 h-8 rounded-full object-cover shrink-0" referrerPolicy="no-referrer" />
-                          <div className="flex-1 min-w-0">
-                            <span className="font-semibold text-gray-900 block truncate">{notif.senderDisplayName}</span>
-                            <span className="text-[10px] text-gray-500 block -mt-0.5">{notif.content}</span>
-                            <span className="text-[9px] text-gray-400 block mt-1">{notif.timestamp}</span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* User display badge header */}
-            <div className="flex items-center gap-2 border-l border-gray-100 pl-4">
-              <img 
-                src={currentUser.avatar} 
-                alt={currentUser.displayName} 
-                className="w-8.5 h-8.5 rounded-full object-cover border-2 border-indigo-500/20"
-                referrerPolicy="no-referrer"
-              />
-              <div className="hidden md:block text-left">
-                <span className="font-display text-xs font-semibold text-slate-800 flex items-center gap-1">
-                  {currentUser.displayName}
-                  {currentUser.isPremium && <Crown className="w-3 h-3 text-amber-500 fill-amber-500" />}
-                </span>
-                <span className="text-[10px] text-gray-400 block -mt-0.5">@{currentUser.username}</span>
-              </div>
-            </div>
-
           </div>
 
-        </div>
-      </header>
-
-      {/* Main Structural Layout Grid */}
-      <main className="max-w-7xl mx-auto px-4 md:px-6 py-6 font-sans">
-        
-        <div className="flex flex-col lg:flex-row gap-6">
-          
-          {/* 1. Left responsive Navigation Sidebar drawer */}
-          <nav className={`w-full lg:w-64 shrink-0 flex flex-row lg:flex-col gap-1 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0 border-b lg:border-b-0 lg:border-r ${isDarkMode ? "border-slate-800/80" : "border-gray-100"} lg:pr-5 scrollbar-none`}>
-            
-            <button 
-              onClick={() => setActiveTab("home")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                activeTab === "home" 
-                  ? activeColorTheme.primaryButton
-                  : isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800/60" : "text-gray-500 hover:text-slate-900 hover:bg-gray-100"
-              }`}
-            >
-              <Home className="w-4.5 h-4.5" />
-              <span>Home Feed</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab("discover")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                activeTab === "discover" 
-                  ? activeColorTheme.primaryButton 
-                  : isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800/60" : "text-gray-500 hover:text-slate-900 hover:bg-gray-100"
-              }`}
-            >
-              <Search className="w-4.5 h-4.5" />
-              <span>Discover Music</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab("messages")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                activeTab === "messages" 
-                  ? activeColorTheme.primaryButton 
-                  : isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800/60" : "text-gray-500 hover:text-slate-900 hover:bg-gray-100"
-              }`}
-            >
-              <MessageSquare className="w-4.5 h-4.5" />
-              <span>Direct Messages</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab("analytics")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                activeTab === "analytics" 
-                  ? activeColorTheme.primaryButton 
-                  : isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800/60" : "text-gray-500 hover:text-slate-900 hover:bg-gray-100"
-              }`}
-            >
-              <BarChart3 className="w-4.5 h-4.5" />
-              <span>Mood Analytics</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab("playlists")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                activeTab === "playlists" 
-                  ? activeColorTheme.primaryButton 
-                  : isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800/60" : "text-gray-500 hover:text-slate-900 hover:bg-gray-100"
-              }`}
-            >
-              <ListMusic className="w-4.5 h-4.5" />
-              <span>Collab Playlists</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab("workspace")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                activeTab === "workspace" 
-                  ? activeColorTheme.primaryButton 
-                  : isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800/60" : "text-gray-500 hover:text-slate-900 hover:bg-gray-100"
-              }`}
-            >
-              <Cloud className="w-4.5 h-4.5" />
-              <span>Workspace Hub</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab("profile")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                activeTab === "profile" 
-                  ? activeColorTheme.primaryButton 
-                  : isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800/60" : "text-gray-500 hover:text-slate-900 hover:bg-gray-100"
-              }`}
-            >
-              <Edit3 className="w-4.5 h-4.5" />
-              <span>My Profile</span>
-            </button>
-
-            {/* Admin toggle */}
-            <button 
-              onClick={() => setActiveTab("admin")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                activeTab === "admin" 
-                  ? "bg-red-600 text-white shadow-md shadow-red-600/15" 
-                  : isDarkMode ? "text-red-400 hover:text-red-300 hover:bg-red-500/5" : "text-gray-500 hover:text-red-600 hover:bg-red-500/5"
-              }`}
-            >
-              <Shield className="w-4.5 h-4.5" />
-              <span>Admin Dashboard</span>
-            </button>
-
-            {/* Escape Logout section */}
+          {/* Self User profile detail badge */}
+          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-805/50 border border-slate-100 dark:border-slate-800/60 p-2.5 rounded-xl">
+            <img src={currentUser.avatar} alt="" className="w-8 h-8 rounded-full object-cover border dark:border-slate-700" referrerPolicy="no-referrer" />
+            <div className="min-w-0 flex-1">
+              <span className="font-display font-semibold text-[11px] text-slate-800 dark:text-white block truncate">{currentUser.displayName}</span>
+              <span className="text-[9px] text-gray-400 block truncate">@{currentUser.username}</span>
+            </div>
             <button 
               onClick={() => {
                 setIsLoggedIn(false);
-                try {
-                  localStorage.setItem("isLoggedIn", "false");
-                } catch {}
+                try { localStorage.setItem("isLoggedIn", "false"); } catch {}
               }}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer text-slate-400 hover:text-red-400 hover:bg-red-500/5"
-              title="Press Escape key at any point to logout instantly"
+              className="text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50/50 dark:hover:bg-red-950/20"
+              title="Logout"
             >
-              <div className="flex items-center gap-3">
-                <X className="w-4.5 h-4.5 text-red-400" />
-                <span>Escape (Logout)</span>
-              </div>
-              <kbd className="hidden lg:inline-block px-1.5 py-0.5 text-[9px] font-sans font-normal text-slate-400 bg-slate-800 border border-slate-700/60 rounded select-none">
-                Esc
-              </kbd>
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+      </nav>
+
+      {/* 2. Primary Layout content body container */}
+      <div className="flex-1 min-w-0 flex flex-col relative">
+        
+        {/* Mobile Header (Sits on top, hidden on desktop screens) */}
+        <header className={`md:hidden sticky top-0 ${isDarkMode ? "bg-slate-900/95 border-slate-800 text-white" : "bg-white/95 border-gray-150 text-slate-950"} backdrop-blur-md border-b px-4 h-15 flex items-center justify-between z-40 transition-colors`}>
+          <div className="cursor-pointer flex items-center gap-1.5" onClick={() => setActiveTab("home")}>
+            <h1 className="font-serif font-extrabold text-xl bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 bg-clip-text text-transparent italic select-none">
+              ọnọdụ
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Ambient Vibe Dropdown */}
+            <select
+              value={currentDisplayMood}
+              onChange={(e) => {
+                const m = e.target.value as MoodType;
+                setCurrentDisplayMood(m);
+                setPostMood(m);
+              }}
+              className={`appearance-none ${isDarkMode ? "bg-slate-800 border-slate-705 text-white" : "bg-gray-100 border-gray-205 text-slate-800"} text-[10px] font-bold pl-2.5 pr-6 py-1 rounded-full cursor-pointer focus:outline-none`}
+            >
+              {Object.values(MOOD_THEMES).map((theme) => (
+                <option key={theme.name} value={theme.name}>
+                  {theme.emoji} {theme.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Dark appearance toggle */}
+            <button 
+              onClick={() => {
+                const ns = !isDarkMode;
+                setIsDarkMode(ns);
+                localStorage.setItem("themeMode", ns ? "dark" : "light");
+              }}
+              className="text-gray-450 hover:text-slate-900 dark:text-gray-300 p-1.5"
+            >
+              {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
             </button>
 
-            {/* Dedicated PWA Smartphone/Laptop Download Panel */}
-            <div className="hidden lg:flex flex-col bg-linear-to-b from-indigo-50/75 to-fuchsia-10/40 dark:from-slate-900/60 dark:to-slate-950/60 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 mt-4 text-xs space-y-2 leading-tight">
-              <div className="flex items-center gap-2">
-                <img src="/logo192.png" alt="" className="w-8 h-8 rounded-lg object-cover shadow-xs border bg-slate-100" />
-                <div>
-                  <h4 className="font-bold text-gray-950 dark:text-white leading-none">ọnọdụ App</h4>
-                  <span className="text-[10px] text-indigo-650 dark:text-indigo-400 font-semibold block mt-1">Multi-device PWA</span>
-                </div>
-              </div>
-              <p className="text-[10px] text-gray-400 leading-relaxed font-sans mt-1">
-                Install ọnọdụ on your smartphone (Android/iOS) or laptop (Mac/Windows) for standalone speeds, direct feed updates, and offline music syncing.
-              </p>
-              <button
-                onClick={triggerPwaInstallation}
-                className="w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-xl transition-all cursor-pointer shadow-md text-[10px] mt-1.5"
-                title="Trigger standalone system installation prompt"
+            {/* Notifications panel bell */}
+            <div className="relative">
+              <button 
+                onClick={() => { setNotificationOpen(!notificationOpen); markAllNotificationsRead(); }}
+                className="text-gray-400 hover:text-slate-900 p-1.5 rounded-full relative"
               >
-                {isAppInstalled ? "App Installed!" : "Install App to Phone/PC 📲"}
+                <Bell className="w-4.5 h-4.5" />
+                {notifications.some(n => !n.read) && (
+                  <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-indigo-650 rounded-full" />
+                )}
               </button>
+              
+              {notificationOpen && (
+                <div className="absolute right-0 mt-3 w-72 bg-white dark:bg-slate-850 border border-gray-100 dark:border-slate-800 rounded-xl shadow-xl py-3 z-50 text-xs text-slate-900 dark:text-white max-h-80 overflow-y-auto">
+                  <div className="px-3 pb-2 border-b border-gray-50 dark:border-slate-850 flex justify-between font-bold">
+                    <span>Notifications</span>
+                    <button onClick={() => setNotificationOpen(false)} className="text-[10px] text-gray-400">Close</button>
+                  </div>
+                  {notifications.length === 0 ? (
+                    <p className="text-center italic text-gray-400 py-4 text-[10px]">No news actions</p>
+                  ) : (
+                    notifications.map(notif => (
+                      <div key={notif.id} className="p-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 flex gap-2 items-start">
+                        <img src={notif.senderAvatar} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" referrerPolicy="no-referrer" />
+                        <div className="min-w-0 flex-1">
+                          <span className="font-bold leading-none block truncate">{notif.senderDisplayName}</span>
+                          <span className="text-[10px] text-gray-500 block truncate">{notif.content}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
+          </div>
+        </header>
 
-          </nav>
-
-          {/* 2. Primary Layout content body */}
-          <div className="flex-1 min-w-0 space-y-6">
+        {/* Dynamic Column view frame */}
+        <main className="flex-1 w-full flex flex-col">
+          
+          {/* Primary Layout content body */}
+          <div className="flex-1 min-w-0 space-y-6 px-4 md:px-6 py-6">
             
             {/* HOME FEED VIEW */}
             {activeTab === "home" && (
@@ -1377,7 +1345,7 @@ export default function App() {
                       className="absolute bottom-3 right-3 bg-white/75 hover:bg-white border rounded-full px-4 py-1.5 text-[10px] font-bold text-gray-800 backdrop-blur-xs flex items-center gap-1 cursor-pointer transition-colors"
                     >
                       <Edit3 className="w-3 h-3" />
-                      Edit Bio
+                      Edit Profile ✏️
                     </button>
                   </div>
 
@@ -1488,6 +1456,130 @@ export default function App() {
                               placeholder={currentUser.bio}
                               className="w-full text-xs border border-gray-100 rounded-xl p-2 h-16 bg-white resize-none"
                             />
+                          </div>
+
+                          {/* Image Uploaders */}
+                          <div className="space-y-3 sm:col-span-2 border-t border-gray-100 pt-4">
+                            <span className="text-[10px] text-gray-450 uppercase font-bold block">Change Display Pictures 🖼️</span>
+                            <div className="grid sm:grid-cols-2 gap-4">
+                              
+                              {/* 1. Avatar (Profile Pic) Uploader */}
+                              <div className="space-y-2">
+                                <label className="text-[10px] text-gray-400 uppercase font-bold block">Display Photo (Avatar)</label>
+                                <div 
+                                  id="avatar-dropzone"
+                                  className="border-2 border-dashed border-gray-200 hover:border-indigo-400 rounded-2xl p-4 text-center cursor-pointer bg-white transition-all flex flex-col items-center justify-center min-h-[120px] relative overflow-hidden group"
+                                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-indigo-500", "bg-indigo-50/20"); }}
+                                  onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove("border-indigo-500", "bg-indigo-50/20"); }}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    e.currentTarget.classList.remove("border-indigo-500", "bg-indigo-50/20");
+                                    const file = e.dataTransfer.files?.[0];
+                                    if (file && file.type.startsWith("image/")) {
+                                      const reader = new FileReader();
+                                      reader.onloadend = () => {
+                                        if (typeof reader.result === "string") setEditAvatar(reader.result);
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }
+                                  }}
+                                  onClick={() => document.getElementById("avatar-file-input")?.click()}
+                                >
+                                  <input 
+                                    type="file" 
+                                    id="avatar-file-input" 
+                                    accept="image/*" 
+                                    className="hidden" 
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        const reader = new FileReader();
+                                        reader.onloadend = () => {
+                                          if (typeof reader.result === "string") setEditAvatar(reader.result);
+                                        };
+                                        reader.readAsDataURL(file);
+                                      }
+                                    }}
+                                  />
+                                  {editAvatar || currentUser.avatar ? (
+                                    <div className="flex flex-col items-center gap-1.5 z-10">
+                                      <img 
+                                        src={editAvatar || currentUser.avatar} 
+                                        alt="Selected Display Picture" 
+                                        className="w-12 h-12 rounded-full object-cover border-2 border-indigo-500 shadow-xs" 
+                                      />
+                                      <span className="text-[9px] text-indigo-600 font-mono font-bold uppercase tracking-wide">Image Loaded</span>
+                                      <span className="text-[8px] text-gray-400">{editAvatar ? "New image selected" : "Current display picture"}</span>
+                                    </div>
+                                  ) : (
+                                    <div className="text-gray-450 flex flex-col items-center gap-1 z-10">
+                                      <Upload className="w-5 h-5 mb-0.5 text-gray-300 group-hover:text-indigo-500" />
+                                      <p className="text-[10px] font-semibold text-gray-600 group-hover:text-indigo-600">Select or Drag Photo</p>
+                                      <p className="text-[8px]">Supports JPEG, PNG, WEBP</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* 2. Cover Photo Uploader */}
+                              <div className="space-y-2">
+                                <label className="text-[10px] text-gray-400 uppercase font-bold block">Cover Banner Photo</label>
+                                <div 
+                                  id="cover-dropzone"
+                                  className="border-2 border-dashed border-gray-200 hover:border-indigo-400 rounded-2xl p-4 text-center cursor-pointer bg-white transition-all flex flex-col items-center justify-center min-h-[120px] relative overflow-hidden group"
+                                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-indigo-500", "bg-indigo-50/20"); }}
+                                  onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove("border-indigo-500", "bg-indigo-50/20"); }}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    e.currentTarget.classList.remove("border-indigo-500", "bg-indigo-50/20");
+                                    const file = e.dataTransfer.files?.[0];
+                                    if (file && file.type.startsWith("image/")) {
+                                      const reader = new FileReader();
+                                      reader.onloadend = () => {
+                                        if (typeof reader.result === "string") setEditCoverPhoto(reader.result);
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }
+                                  }}
+                                  onClick={() => document.getElementById("cover-file-input")?.click()}
+                                >
+                                  <input 
+                                    type="file" 
+                                    id="cover-file-input" 
+                                    accept="image/*" 
+                                    className="hidden" 
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        const reader = new FileReader();
+                                        reader.onloadend = () => {
+                                          if (typeof reader.result === "string") setEditCoverPhoto(reader.result);
+                                        };
+                                        reader.readAsDataURL(file);
+                                      }
+                                    }}
+                                  />
+                                  {editCoverPhoto || currentUser.coverPhoto ? (
+                                    <div className="flex flex-col items-center gap-1.5 z-10 w-full px-2">
+                                      <img 
+                                        src={editCoverPhoto || currentUser.coverPhoto} 
+                                        alt="Selected Cover Picture" 
+                                        className="h-10 w-full rounded-lg object-cover border-2 border-indigo-500 shadow-xs" 
+                                      />
+                                      <span className="text-[9px] text-indigo-600 font-mono font-bold uppercase tracking-wide">Banner Loaded</span>
+                                      <span className="text-[8px] text-gray-400">{editCoverPhoto ? "New cover selected" : "Current cover picture"}</span>
+                                    </div>
+                                  ) : (
+                                    <div className="text-gray-450 flex flex-col items-center gap-1 z-10">
+                                      <Upload className="w-5 h-5 mb-0.5 text-gray-300 group-hover:text-indigo-500" />
+                                      <p className="text-[10px] font-semibold text-gray-600 group-hover:text-indigo-600">Select or Drag Banner</p>
+                                      <p className="text-[8px]">Supports horizontal images</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                            </div>
                           </div>
                         </div>
 
@@ -1691,28 +1783,81 @@ export default function App() {
                         <span className="text-[10px] text-gray-400 font-semibold uppercase block">Attach Cover Photo</span>
                         
                         {attachedImageUrl ? (
-                          <div className="flex items-center gap-3 justify-between bg-slate-100 rounded-2xl p-2 text-xs">
-                            <span className="truncate max-w-xs">{attachedImageUrl}</span>
-                            <button type="button" onClick={() => setAttachedImageUrl("")} className="text-gray-400 hover:text-gray-600 p-1">
-                              <X className="w-4 h-4" />
-                            </button>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-3 justify-between bg-slate-100 rounded-2xl p-2 text-xs">
+                              <span className="truncate max-w-xs">{attachedImageUrl.startsWith("data:") ? "Custom uploaded photo" : attachedImageUrl}</span>
+                              <button type="button" onClick={() => setAttachedImageUrl("")} className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer">
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                            <img src={attachedImageUrl} alt="Preview" className="w-full h-32 object-cover rounded-xl border" />
                           </div>
                         ) : (
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setAttachedImageUrl("https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600&auto=format&fit=crop&q=80")}
-                              className="text-[10px] bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-100 py-2 px-3 rounded-full flex-1"
+                          <div className="space-y-3">
+                            {/* Drag and Drop zone */}
+                            <div 
+                              id="post-image-dropzone"
+                              className="border border-dashed border-gray-300 hover:border-indigo-450 rounded-2xl p-4 text-center cursor-pointer bg-white transition-all flex flex-col items-center justify-center min-h-[90px] relative group"
+                              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-indigo-500", "bg-indigo-50/20"); }}
+                              onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove("border-indigo-500", "bg-indigo-50/20"); }}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                e.currentTarget.classList.remove("border-indigo-500", "bg-indigo-50/20");
+                                const file = e.dataTransfer.files?.[0];
+                                if (file && file.type.startsWith("image/")) {
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => {
+                                    if (typeof reader.result === "string") setAttachedImageUrl(reader.result);
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                              onClick={() => document.getElementById("post-image-input")?.click()}
                             >
-                              📷 Attach Concert Art
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setAttachedImageUrl("https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=600&q=80")}
-                              className="text-[10px] bg-slate-50 text-slate-700 hover:bg-slate-100 border py-2 px-3 rounded-full flex-1"
-                            >
-                              🌌 Cozy Rain Frame
-                            </button>
+                              <input 
+                                type="file" 
+                                id="post-image-input" 
+                                accept="image/*" 
+                                className="hidden" 
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => {
+                                      if (typeof reader.result === "string") setAttachedImageUrl(reader.result);
+                                    };
+                                    reader.readAsDataURL(file);
+                                  }
+                                }}
+                              />
+                              <div className="text-gray-400 flex flex-col items-center gap-1">
+                                <Upload className="w-5 h-5 mb-0.5 text-gray-300 group-hover:text-indigo-500" />
+                                <p className="text-[10px] font-semibold text-gray-600 group-hover:text-indigo-600">Drag or Click to Upload Image 📸</p>
+                                <p className="text-[8px] text-gray-400">Supports JPEG, PNG, WEBP, GIF</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <span className="text-[8px] text-gray-400 uppercase tracking-widest block font-bold">Or Quick Preset:</span>
+                              <div className="flex-1 border-t border-gray-100"></div>
+                            </div>
+
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setAttachedImageUrl("https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600&auto=format&fit=crop&q=80")}
+                                className="text-[9px] bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-100 py-1.5 px-3 rounded-full flex-1 transition-all cursor-pointer"
+                              >
+                                📷 Concert Preset
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setAttachedImageUrl("https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=600&q=80")}
+                                className="text-[9px] bg-slate-50 text-slate-700 hover:bg-slate-100 border py-1.5 px-3 rounded-full flex-1 transition-all cursor-pointer"
+                              >
+                                🌌 Cozy Preset
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -1883,9 +2028,62 @@ export default function App() {
 
           </div>
 
-        </div>
+        </main>
 
-      </main>
+        {/* 3. Mobile Navigation Bottom Bar (Sticky at viewport bottom) */}
+        <nav className={`fixed md:hidden bottom-0 left-0 right-0 h-16 ${isDarkMode ? "bg-slate-900/95 border-slate-800 text-white" : "bg-white/95 border-gray-150 text-slate-950"} backdrop-blur-md border-t flex items-center justify-around px-4 z-40 transition-colors shadow-lg`}>
+          
+          <button 
+            onClick={() => setActiveTab("home")}
+            className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-transform active:scale-95 ${activeTab === "home" ? "text-indigo-600 dark:text-indigo-400 font-bold" : "text-gray-450"}`}
+          >
+            <Home className="w-5.5 h-5.5 stroke-2" />
+            <span className="text-[9px] mt-0.5 font-medium">Home</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab("discover")}
+            className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-transform active:scale-95 ${activeTab === "discover" ? "text-indigo-600 dark:text-indigo-400 font-bold" : "text-gray-450"}`}
+          >
+            <Search className="w-5.5 h-5.5 stroke-2" />
+            <span className="text-[9px] mt-0.5 font-medium">Explore</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab("messages")}
+            className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-transform active:scale-95 relative ${activeTab === "messages" ? "text-indigo-600 dark:text-indigo-400 font-bold" : "text-gray-450"}`}
+          >
+            <MessageSquare className="w-5.5 h-5.5 stroke-2" />
+            {notifications.some(n => n.type === "message" && !n.read) && (
+              <span className="absolute top-1 right-6 w-2 h-2 bg-indigo-600 rounded-full" />
+            )}
+            <span className="text-[9px] mt-0.5 font-medium">DMs</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab("playlists")}
+            className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-transform active:scale-95 ${activeTab === "playlists" ? "text-indigo-600 dark:text-indigo-400 font-bold" : "text-gray-450"}`}
+          >
+            <ListMusic className="w-5.5 h-5.5 stroke-2" />
+            <span className="text-[9px] mt-0.5 font-medium">Collab</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab("profile")}
+            className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-transform active:scale-95 ${activeTab === "profile" ? "text-indigo-600 dark:text-indigo-400 font-bold" : "text-gray-450"}`}
+          >
+            <img 
+              src={currentUser.avatar} 
+              alt="DP" 
+              className={`w-6 h-6 rounded-full object-cover border ${activeTab === "profile" ? "border-indigo-600 dark:border-indigo-400 ring-2 ring-indigo-500/25" : "border-gray-300 dark:border-slate-700"}`}
+              referrerPolicy="no-referrer"
+            />
+            <span className="text-[9px] mt-0.5 font-medium">Profile</span>
+          </button>
+
+        </nav>
+
+      </div>
 
       {/* Disappearing Stories Immersive full-screen visual modal */}
       {viewingStory && (

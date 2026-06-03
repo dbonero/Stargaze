@@ -656,7 +656,23 @@ export default function DirectMessages({
           )}
 
           {/* Message Input container */}
-          <div className="p-3 border-t border-gray-150 bg-white flex-shrink-0">
+          <div 
+            className="p-3 border-t border-gray-150 bg-white flex-shrink-0 transition-colors"
+            onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("bg-indigo-50/20"); }}
+            onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove("bg-indigo-50/20"); }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.currentTarget.classList.remove("bg-indigo-50/20");
+              const file = e.dataTransfer.files?.[0];
+              if (file && file.type.startsWith("image/")) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  if (typeof reader.result === "string") setAttachedImage(reader.result);
+                };
+                reader.readAsDataURL(file);
+              }
+            }}
+          >
             <div className="flex items-center gap-2">
               
               {/* Media attach panel */}
@@ -668,10 +684,26 @@ export default function DirectMessages({
                 >
                   <Music className="w-4.5 h-4.5" />
                 </button>
+                <input 
+                  type="file" 
+                  id="chat-image-input" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        if (typeof reader.result === "string") setAttachedImage(reader.result);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
                 <button 
-                  onClick={attachMockPhoto}
+                  onClick={() => document.getElementById("chat-image-input")?.click()}
                   className="text-gray-400 hover:text-indigo-600 hover:bg-gray-50 p-2 rounded-full cursor-pointer"
-                  title="Attach Unsplash Photo"
+                  title="Upload & Attach Any Photo 📸"
                 >
                   <Image className="w-4.5 h-4.5" />
                 </button>
