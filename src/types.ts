@@ -21,6 +21,7 @@ export interface User {
   avatar: string;
   coverPhoto: string;
   bio: string;
+  email?: string;
   location?: string;
   favoriteSong?: string;
   followersCount: number;
@@ -127,6 +128,31 @@ export interface Playlist {
   createdByUserId: string;
   collaborators: string[]; // User IDs (includes creator)
   songs: PlaylistSong[];
+  createdAt: string;
+}
+
+export interface GroupMessage {
+  id: string;
+  groupId: string;
+  senderId: string;
+  senderDisplayName: string;
+  senderAvatar: string;
+  content: string;
+  imageUrl?: string;
+  song?: Song;
+  lyricsLine?: string;
+  isVoiceNote?: boolean;
+  duration?: string;
+  timestamp: string;
+}
+
+export interface MusicGroup {
+  id: string;
+  name: string;
+  description: string;
+  coverUrl: string;
+  createdById: string;
+  members: string[]; // List of userIds
   createdAt: string;
 }
 

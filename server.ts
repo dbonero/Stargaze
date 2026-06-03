@@ -7,7 +7,7 @@ import express, { Request, Response } from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
-import { User, Post, Song, Story, Message, Notification, Comment, Playlist, PlaylistSong } from "./src/types";
+import { User, Post, Song, Story, Message, Notification, Comment, Playlist, PlaylistSong, GroupMessage, MusicGroup } from "./src/types";
 
 const app = express();
 app.use(express.json());
@@ -166,7 +166,7 @@ const INITIAL_USERS: User[] = [
     followingCount: 98,
     likesCount: 1540,
     postsCount: 3,
-    isPremium: false,
+    isPremium: true,
     followingIds: ["chloe_vibe", "leo_beats"],
     blockedIds: [],
     mutedIds: [],
@@ -202,7 +202,7 @@ const INITIAL_USERS: User[] = [
     followingCount: 220,
     likesCount: 2450,
     postsCount: 18,
-    isPremium: false,
+    isPremium: true,
     followingIds: ["currentUser"],
     blockedIds: [],
     mutedIds: [],
@@ -220,7 +220,7 @@ const INITIAL_USERS: User[] = [
     followingCount: 512,
     likesCount: 380,
     postsCount: 12,
-    isPremium: false,
+    isPremium: true,
     followingIds: ["chloe_vibe"],
     blockedIds: [],
     mutedIds: [],
@@ -393,6 +393,59 @@ let MOCK_NOTIFICATIONS: Notification[] = [
     content: "commented: 'Clean setups inspire clean vibes.'",
     timestamp: "2 days ago",
     read: true,
+  }
+];
+
+let MOCK_GROUPS: MusicGroup[] = [
+  {
+    id: "group_1",
+    name: "Indie Acoustic Jam",
+    description: "Discussing warm vocal arrangements and raw acoustic guitar tracks.",
+    coverUrl: "https://images.unsplash.com/photo-1510915228340-29c85a43dcfe?w=400&auto=format&fit=crop&q=80",
+    createdById: "chloe_vibe",
+    members: ["currentUser", "chloe_vibe", "guitar_hero"],
+    createdAt: "June 1, 2026",
+  },
+  {
+    id: "group_2",
+    name: "Aesthetic Synthwave lab",
+    description: "Modulating analog synths, cyberpunk aesthetics and 80s drum machines.",
+    coverUrl: "https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=400&auto=format&fit=crop&q=80",
+    createdById: "leo_beats",
+    members: ["currentUser", "leo_beats", "chloe_vibe"],
+    createdAt: "June 2, 2026",
+  }
+];
+
+let MOCK_GROUP_MESSAGES: GroupMessage[] = [
+  {
+    id: "gmsg_1",
+    groupId: "group_1",
+    senderId: "chloe_vibe",
+    senderDisplayName: "Chloe Chen",
+    senderAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80",
+    content: "Welcome to our acoustic hub! I was thinking we should collaborate on a new folk cover.",
+    timestamp: "11:21 AM",
+  },
+  {
+    id: "gmsg_2",
+    groupId: "group_1",
+    senderId: "guitar_hero",
+    senderDisplayName: "Marcus Vance",
+    senderAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80",
+    content: "Absolutely! I can lay down some fingerstyle progression. What about this song?",
+    song: SONG_DATABASE[5],
+    lyricsLine: "Fever dream high in the quiet of the night",
+    timestamp: "11:32 AM",
+  },
+  {
+    id: "gmsg_3",
+    groupId: "group_2",
+    senderId: "leo_beats",
+    senderDisplayName: "Leonardo King (Leo)",
+    senderAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80",
+    content: "Just booted up the vintage Juno-106. Getting some incredibly deep sub-bass frequencies today.",
+    timestamp: "Yesterday",
   }
 ];
 
@@ -770,6 +823,73 @@ app.delete("/api/playlists/:id", (req: Request, res: Response) => {
 
   MOCK_PLAYLISTS.splice(index, 1);
   res.json({ success: true });
+});
+
+// AUTHENTICATION ENDPOINTS
+app.post("/api/auth/google", (req: Request, res: Response) => {
+  const { email, displayName, avatar } = req.body;
+  if (!email) return res.status(400).json({ error: "Email is required" });
+
+  const username = email.split("@")[0].toLowerCase().replace(/[^a-z0-9_]/g, "_");
+
+  const newUser: User = {
+    id: "currentUser",
+    username: username,
+    displayName: displayName || "Stargazing Scout",
+    avatar: avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&auto=format&fit=crop&q=80",
+    coverPhoto: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200&auto=format&fit=crop&q=80",
+    bio: `Ecosystem entry via Google Account (${email}) 🌌✨ Ready to curate.`,
+    location: "London, UK",
+    favoriteSong: "Blinding Lights by The Weeknd",
+    followersCount: 12,
+    followingCount: 2,
+    likesCount: 0,
+    postsCount: 0,
+    isPremium: true, // Google login gets complimentary Premium perks!
+    followingIds: ["chloe_vibe", "leo_beats"],
+    blockedIds: [],
+    mutedIds: [],
+  };
+
+  userDatabaseMap.set("currentUser", newUser);
+  res.json({ success: true, user: newUser });
+});
+
+app.post("/api/auth/create-account", (req: Request, res: Response) => {
+  const { username, displayName, email, bio, location, favoriteSong, avatar } = req.body;
+
+  if (!username || !displayName) {
+    return res.status(400).json({ error: "Username and display name are required" });
+  }
+
+  if (email && (!email.includes("@") || !email.includes("."))) {
+    return res.status(400).json({ error: "Please enter a valid email address." });
+  }
+
+  const cleanUsername = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+
+  const newUser: User = {
+    id: "currentUser",
+    username: cleanUsername,
+    displayName: displayName.trim(),
+    email: email ? email.trim() : undefined,
+    avatar: avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+    coverPhoto: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1200&auto=format&fit=crop&q=80",
+    bio: bio || "A freshly tuned beat. Share your ọnọdụ. 🔭🎧",
+    location: location || "Earth",
+    favoriteSong: favoriteSong || "Midnight Lo-fi Vibe by Chillhop Beats",
+    followersCount: 0,
+    followingCount: 2,
+    likesCount: 0,
+    postsCount: 0,
+    isPremium: true,
+    followingIds: ["chloe_vibe", "leo_beats"],
+    blockedIds: [],
+    mutedIds: [],
+  };
+
+  userDatabaseMap.set("currentUser", newUser);
+  res.json({ success: true, user: newUser });
 });
 
 // USER ENDPOINTS
@@ -1153,6 +1273,105 @@ app.post("/api/messages", (req: Request, res: Response) => {
   res.json(newMessage);
 });
 
+// MUSIC GROUPS ENDPOINTS
+app.get("/api/groups", (req: Request, res: Response) => {
+  res.json(MOCK_GROUPS);
+});
+
+app.post("/api/groups", (req: Request, res: Response) => {
+  const current = userDatabaseMap.get("currentUser");
+  if (!current) return res.status(401).json({ error: "Unauthorized" });
+
+  const { name, description, coverUrl } = req.body;
+  if (!name) return res.status(400).json({ error: "Group name is required" });
+
+  const newGroup: MusicGroup = {
+    id: "group_" + Date.now(),
+    name,
+    description: description || "Discussing alignments, lyrics, and tracks.",
+    coverUrl: coverUrl || "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&auto=format&fit=crop&q=80",
+    createdById: current.id,
+    members: ["currentUser", "chloe_vibe", "leo_beats"],
+    createdAt: new Date().toLocaleDateString([], { year: "numeric", month: "short", day: "numeric" }),
+  };
+
+  MOCK_GROUPS.unshift(newGroup);
+
+  MOCK_GROUP_MESSAGES.push({
+    id: "gmsg_init_" + Date.now(),
+    groupId: newGroup.id,
+    senderId: "system",
+    senderDisplayName: "System",
+    senderAvatar: "https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=100",
+    content: `Group "${newGroup.name}" created by @${current.username}. Say hello to start discussing music ideas!`,
+    timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+  });
+
+  res.json(newGroup);
+});
+
+app.get("/api/groups/:id/messages", (req: Request, res: Response) => {
+  const groupId = req.params.id;
+  const messages = MOCK_GROUP_MESSAGES.filter((m) => m.groupId === groupId);
+  res.json(messages);
+});
+
+app.post("/api/groups/:id/messages", (req: Request, res: Response) => {
+  const current = userDatabaseMap.get("currentUser");
+  if (!current) return res.status(401).json({ error: "Unauthorized" });
+
+  const groupId = req.params.id;
+  const { content, song, lyricsLine, isVoiceNote, duration, imageUrl } = req.body;
+
+  const newMsg: GroupMessage = {
+    id: "gmsg_" + Date.now(),
+    groupId,
+    senderId: current.id,
+    senderDisplayName: current.displayName,
+    senderAvatar: current.avatar,
+    content: content || "",
+    song,
+    lyricsLine,
+    isVoiceNote,
+    duration,
+    imageUrl,
+    timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+  };
+
+  MOCK_GROUP_MESSAGES.push(newMsg);
+
+  const groupObj = MOCK_GROUPS.find(g => g.id === groupId);
+  if (groupObj) {
+    const defaultResponders = ["chloe_vibe", "leo_beats", "guitar_hero"];
+    const otherMembers = defaultResponders.filter(mId => mId !== current.id);
+    const chosenOne = otherMembers[Math.floor(Math.random() * otherMembers.length)];
+    const chosenUser = userDatabaseMap.get(chosenOne);
+
+    if (chosenUser) {
+      setTimeout(() => {
+        const groupResponses = [
+          "I love this idea! Let's collaborate on a shared workspace jam session.",
+          "Whoa, this track hits the sweet spot. We should add it to the group playlist.",
+          "Perfect selection. Let's research more lyric matches for this track using AI locator.",
+          "Pure genius! I am starting a draft session write-up right now.",
+          "Agreed! It aligns so well with our sonic profile.",
+        ];
+        MOCK_GROUP_MESSAGES.push({
+          id: "gmsg_reply_" + Date.now(),
+          groupId,
+          senderId: chosenUser.id,
+          senderDisplayName: chosenUser.displayName,
+          senderAvatar: chosenUser.avatar,
+          content: groupResponses[Math.floor(Math.random() * groupResponses.length)],
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        });
+      }, 2500);
+    }
+  }
+
+  res.json(newMsg);
+});
+
 // STORIES
 app.get("/api/stories", (req: Request, res: Response) => {
   res.json(MOCK_STORIES);
@@ -1191,55 +1410,163 @@ app.post("/api/notifications/read", (req: Request, res: Response) => {
 });
 
 // SPOTIFY SEARCH & SMART MOCK INTEGRATION
+const ARTWORK_POOL = [
+  "1514525253161-7a46d19cd819", // Concert Lights
+  "1507838153414-b4b713384a76", // Retro Vinyl
+  "1470225620780-dba8ba36b745", // DJ Turntable
+  "1511671782779-c97d3d27a1d4", // Retro Mic
+  "1498038432885-c6f3f1b912ee", // Rainy Studio window
+  "1506157786151-b8491531f063", // Neon Road
+  "1534447677768-be436bb09401", // Aesthetic retro bedroom
+  "1487180142328-054b783fc471", // Pastel Cassette Tape
+  "1614613535308-eb5fbd3d2c17", // Colorful Abstract Lights
+  "1459749411175-04bf5292ceea", // Outdoor Stage Concert
+  "1501386761578-eac5c94b800a", // Music Crowd Hand
+  "1518609878373-06d740f60d8b", // Neon Cityscape Night
+  "1481887328591-3e277f9473dc", // Vintage Tape Recorder
+  "1508700115892-45ecd05ae2ad", // Golden Sunset stage
+  "1557672172-298e090bd0f1", // Liquid Art Design
+  "1483412033650-1015ddeb83d1", // Speaker wall
+  "1516280440614-37939bbacd6a", // Cozy acoustic lounge
+  "1438183972690-6d4658e3290e", // Deep space orbit
+  "1510915228340-29c85a43dcfe", // Cyberpunk guitar player
+  "1465847899084-d164df4dedc6", // Record store crates
+  "1513829096999-4978602297af", // Dynamic pop star silhouette
+  "1509198397868-475647b2a1e5", // Electric bass
+  "1453090927415-5f45085b65c0", // headphones walk
+];
+
+function getDeterministicArtworkUrl(title: string, artist: string): string {
+  const combined = `${title}-${artist}`;
+  let hash = 0;
+  for (let i = 0; i < combined.length; i++) {
+    hash = combined.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % ARTWORK_POOL.length;
+  return `https://images.unsplash.com/photo-${ARTWORK_POOL[index]}?w=400&auto=format&fit=crop&q=80`;
+}
+
+function getDeterministicPreviewUrl(title: string, artist: string): string {
+  const combined = `${title}-${artist}`;
+  let hash = 0;
+  for (let i = 0; i < combined.length; i++) {
+    hash = combined.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const trackNum = (Math.abs(hash) % 16) + 1;
+  return `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${trackNum}.mp3`;
+}
+
 app.get("/api/spotify/search", async (req: Request, res: Response) => {
-  const query = (req.query.q as string || "").toLowerCase();
+  const query = (req.query.q as string || "").trim();
   
+  if (!query) {
+    return res.json(SONG_DATABASE);
+  }
+
   // Filter standard database first
   let results = SONG_DATABASE.filter(
-    (s) => s.title.toLowerCase().includes(query) || s.artist.toLowerCase().includes(query)
+    (s) => s.title.toLowerCase().includes(query.toLowerCase()) || s.artist.toLowerCase().includes(query.toLowerCase())
   );
 
-  // If search query is extremely unique or contains moods, and Gemini is available, let's inject a Dynamic song result!
-  if (results.length === 0 && query.length > 2 && getGemini()) {
+  // If there's an active Gemini API client, let's locate ANY song around the world using Google Search grounding!
+  const g = getGemini();
+  if (g && query.length >= 2) {
     try {
-      const g = getGemini();
-      if (g) {
-        const geminiRes = await g.models.generateContent({
-          model: "gemini-3.5-flash",
-          contents: `The user wanted to search Spotify for: "${query}". Generate one realistic song name, artist, popular album, and hypothetical brief lyrics snippet. Respond ONLY as a parsing-friendly JSON object with keys: title, artist, album, and briefLyrics.`,
-          config: {
-            responseMimeType: "application/json"
+      const geminiRes = await g.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: `Find details for the real-world song matching: "${query}". Use Google Search tool to ensure 100% accurate title, artist, and album/release details for this song from anywhere around the world.
+Return a single JSON object (and nothing else) matching this schema:
+{
+  "title": "the real-world song title",
+  "artist": "the real-world artist",
+  "album": "the official album or single name",
+  "briefLyrics": "a 4-line lyric excerpt of the song"
+}`,
+        config: {
+          responseMimeType: "application/json",
+          tools: [{ googleSearch: {} }]
+        }
+      });
+
+      const textOutput = geminiRes.text;
+      if (textOutput) {
+        const parsed = JSON.parse(textOutput.trim());
+        if (parsed.title && parsed.artist) {
+          const exists = results.some(r => r.title.toLowerCase() === parsed.title.toLowerCase() && r.artist.toLowerCase() === parsed.artist.toLowerCase());
+          if (!exists) {
+            const artworkUrl = getDeterministicArtworkUrl(parsed.title, parsed.artist);
+            const previewUrl = getDeterministicPreviewUrl(parsed.title, parsed.artist);
+            
+            const songObj: Song = {
+              spotifyId: "gen_grounded_" + Date.now() + "_" + Math.floor(Math.random() * 100),
+              title: parsed.title,
+              artist: parsed.artist,
+              album: parsed.album || "Single",
+              artworkUrl: artworkUrl,
+              previewUrl: previewUrl,
+              externalUrl: `https://open.spotify.com/search/${encodeURIComponent(parsed.title + " " + parsed.artist)}`,
+              durationMs: 200000,
+            };
+            results = [songObj, ...results];
           }
-        });
-        
-        const textOutput = geminiRes.text;
-        if (textOutput) {
-          const parsed = JSON.parse(textOutput.trim());
-          const generatedSong: Song = {
-            spotifyId: "gen_" + Date.now(),
-            title: parsed.title || "Custom Aesthetic Beat",
-            artist: parsed.artist || "MoodTunes Artists",
-            album: parsed.album || "Creative Mindsets",
-            artworkUrl: MOCK_PHOTOS[Math.floor(Math.random() * MOCK_PHOTOS.length)],
-            previewUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-            externalUrl: "https://open.spotify.com",
-            durationMs: 180000,
-          };
-          
-          results.push(generatedSong);
         }
       }
     } catch (err) {
-      console.warn("Spotify dynamic creative search failed, returning fallback:", err);
+      console.warn("World song Search with Google Search Grounding failed:", err);
     }
   }
 
-  // Fallback default search result if nothing else works
+  // Fallback if still empty
+  if (results.length === 0) {
+    results = SONG_DATABASE.filter(
+      (s) => s.title.toLowerCase().includes(query.toLowerCase()) || s.artist.toLowerCase().includes(query.toLowerCase())
+    );
+  }
   if (results.length === 0) {
     results = [SONG_DATABASE[0], SONG_DATABASE[1], SONG_DATABASE[4]];
   }
 
   res.json(results);
+});
+
+// LYRICS DEEP BRIDGING ROUTE
+app.get("/api/songs/lyrics", async (req: Request, res: Response) => {
+  const title = (req.query.title as string || "").trim();
+  const artist = (req.query.artist as string || "").trim();
+
+  if (!title || !artist) {
+    return res.status(400).json({ error: "title and artist are required parameters" });
+  }
+
+  const g = getGemini();
+  if (g) {
+    try {
+      const geminiRes = await g.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: `Find and output the complete official lyrics of the song "${title}" by "${artist}". Use Google Search grounding to retrieve the official verified lyrics of this song.
+Do not include any intro, outro, preamble, markdown formatting headers, or conversational comments. Output only the line-by-line raw lyrics of the song, separated by standard line breaks.`,
+        config: {
+          tools: [{ googleSearch: {} }]
+        }
+      });
+      
+      const lyricsText = geminiRes.text || "Lyrics are preparing, tune in soon...";
+      return res.json({ lyrics: lyricsText });
+    } catch (err) {
+      console.error("Lyrics AI fetching failed:", err);
+      return res.status(500).json({ error: "Failed to load lyrics" });
+    }
+  } else {
+    return res.json({
+      lyrics: `[Aesthetic melody playing...]
+Sailing through the daily waveforms,
+Holding fast through the storms.
+We are the sound of the future aligning,
+Underneath the stars shining.
+Feel the frequency of ${title} by ${artist},
+Elevating our alignments.`
+    });
+  }
 });
 
 

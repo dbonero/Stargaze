@@ -8,7 +8,7 @@ import {
   Home, Sparkles, MessageSquare, BarChart3, Shield, Star, Crown, HelpCircle,
   PlusCircle, Heart, Share2, Bookmark, Flame, Image, Search, Bell, Navigation, 
   MapPin, Edit3, Music, Check, CheckCircle, ChevronRight, X, ArrowLeft, ArrowRight, RefreshCw, Disc,
-  ListMusic, Sun, Moon
+  ListMusic, Sun, Moon, Cloud, Mail
 } from "lucide-react";
 import { Post, Song, User, Comment, Story, Message, Notification, Playlist, MoodType } from "./types";
 import FeedCard from "./components/FeedCard";
@@ -17,6 +17,7 @@ import MoodAnalytics from "./components/MoodAnalytics";
 import Discovery from "./components/Discovery";
 import AdminPanel from "./components/AdminPanel";
 import CollaborativePlaylists from "./components/CollaborativePlaylists";
+import WorkspaceHub from "./components/WorkspaceHub";
 
 const MOOD_THEMES: Record<MoodType, {
   name: string;
@@ -160,8 +161,118 @@ export default function App() {
   });
   const [currentDisplayMood, setCurrentDisplayMood] = useState<MoodType>("Relaxed");
 
+  // Authentication State
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("isLoggedIn") === "true";
+    } catch {
+      return false;
+    }
+  });
+  const [loginInput, setLoginInput] = useState("");
+  const [loginError, setLoginError] = useState("");
+
+  // Sub-modes for authentication
+  const [authMode, setAuthMode] = useState<"register" | "google">("register");
+  const [registerUsername, setRegisterUsername] = useState("");
+  const [registerDisplayName, setRegisterDisplayName] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerBio, setRegisterBio] = useState("");
+  const [registerLocation, setRegisterLocation] = useState("");
+  const [registerFavoriteSong, setRegisterFavoriteSong] = useState("");
+  const [registerAvatar, setRegisterAvatar] = useState("https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80");
+
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loginInput.trim().toLowerCase() === "explore") {
+      setIsLoggedIn(true);
+      try {
+        localStorage.setItem("isLoggedIn", "true");
+      } catch {}
+      setLoginError("");
+    } else if (!loginInput.trim()) {
+      setLoginError("Please enter the login phrase 'explore' to enter.");
+    } else {
+      setLoginError("Incorrect phrase. Hint: Type 'explore' to enter the stars.");
+    }
+  };
+
+  const handleGoogleLogin = async (email: string, name: string, avatar: string) => {
+    try {
+      setLoginError("");
+      const res = await fetch("/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, displayName: name, avatar })
+      });
+      if (res.ok) {
+        setIsLoggedIn(true);
+        try {
+          localStorage.setItem("isLoggedIn", "true");
+        } catch {}
+        await bootstrapState();
+      } else {
+        setLoginError("Google Sign-In failed on the server.");
+      }
+    } catch {
+      setLoginError("Google Sign-In connection failed.");
+    }
+  };
+
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!registerUsername.trim() || !registerDisplayName.trim()) {
+      setLoginError("Please enter both a username and a display name.");
+      return;
+    }
+    try {
+      setLoginError("");
+      const res = await fetch("/api/auth/create-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: registerUsername,
+          displayName: registerDisplayName,
+          email: registerEmail,
+          bio: registerBio,
+          location: registerLocation,
+          favoriteSong: registerFavoriteSong,
+          avatar: registerAvatar,
+        })
+      });
+      if (res.ok) {
+        setIsLoggedIn(true);
+        try {
+          localStorage.setItem("isLoggedIn", "true");
+        } catch {}
+        await bootstrapState();
+      } else {
+        const errData = await res.json();
+        setLoginError(errData.error || "Failed to create account.");
+      }
+    } catch {
+      setLoginError("Failed to communicate with authentication server.");
+    }
+  };
+
+  // Keyboard Escape listener for logging out
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isLoggedIn && event.key === "Escape") {
+        setIsLoggedIn(false);
+        try {
+          localStorage.setItem("isLoggedIn", "false");
+        } catch {}
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isLoggedIn]);
+
   // Navigation active tab index
-  const [activeTab, setActiveTab] = useState<"home" | "discover" | "messages" | "analytics" | "profile" | "admin" | "playlists">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "discover" | "messages" | "analytics" | "profile" | "admin" | "playlists" | "workspace">("home");
   const [posts, setPosts] = useState<Post[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -579,11 +690,182 @@ export default function App() {
     } catch {}
   };
 
+  if (!isLoggedIn) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-slate-100 font-sans relative overflow-hidden">
+        {/* Glow Spheres */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-indigo-500/10 filter blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 left-1/3 w-80 h-80 rounded-full bg-fuchsia-500/5 filter blur-[100px] pointer-events-none" />
+        
+        {/* Star Particles Simulation */}
+        <div className="absolute inset-0 opacity-30 pointer-events-none bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px]" />
+
+        <div className="max-w-md w-full px-6 py-12 text-center space-y-7 z-10 font-sans">
+          {/* Pulsing Outer Disc */}
+          <div className="relative inline-block mx-auto">
+            <div className="absolute inset-0 bg-indigo-500/20 rounded-full filter blur-xl animate-pulse" />
+            <div className="relative bg-slate-900 border border-indigo-500/30 p-5 rounded-3xl shadow-2xl text-indigo-400">
+              <Disc className="w-14 h-14 animate-[spin_10s_linear_infinite]" />
+            </div>
+            <div className="absolute -top-1 -right-1 bg-gradient-to-tr from-amber-400 to-fuchsia-500 p-1.5 rounded-full text-white animate-bounce">
+              <Sparkles className="w-4 h-4" />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h1 className="font-display font-extrabold text-4xl tracking-tight bg-gradient-to-r from-white via-indigo-200 to-indigo-400 bg-clip-text text-transparent">
+              ọnọdụ
+            </h1>
+            <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+              A collaborative social platform sharing music and moods in unified posts.
+            </p>
+          </div>
+
+          {/* Direct Stargaze Registration Form */}
+
+          {authMode === "register" && (
+            <form onSubmit={handleRegisterSubmit} className="bg-slate-900/60 border border-slate-850 rounded-3xl p-6 shadow-xl backdrop-blur-md space-y-4 text-left">
+              <div>
+                <h3 className="text-xs text-slate-200 font-bold uppercase tracking-wider block">Join the Orbit</h3>
+                <p className="text-[10px] text-slate-400 mt-0.5">Establish your social music handle.</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <span className="text-[9.5px]/none text-slate-405 font-bold uppercase tracking-wider block">Profile Image</span>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80"
+                  ].map((imgUrl, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setRegisterAvatar(imgUrl)}
+                      className={`relative rounded-xl overflow-hidden aspect-square border-2 transition-all cursor-pointer ${
+                        registerAvatar === imgUrl 
+                          ? "border-indigo-500 scale-105" 
+                          : "border-slate-850 hover:border-slate-800"
+                      }`}
+                    >
+                      <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+                      {registerAvatar === imgUrl && (
+                        <div className="absolute inset-0 bg-indigo-600/10 flex items-center justify-center">
+                          <Check className="w-4.5 h-4.5 text-white" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label htmlFor="reg-email" className="text-[9.5px] text-slate-400 font-bold uppercase block">Email Address</label>
+                <input
+                  id="reg-email"
+                  type="email"
+                  required
+                  placeholder="name@example.com"
+                  value={registerEmail}
+                  onChange={(e) => setRegisterEmail(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-white placeholder-slate-700"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5 bg-slate-905">
+                <div className="space-y-1">
+                  <label htmlFor="reg-user" className="text-[9.5px] text-slate-400 font-bold uppercase block">Username</label>
+                  <input
+                    id="reg-user"
+                    type="text"
+                    required
+                    placeholder="synth_chao"
+                    value={registerUsername}
+                    onChange={(e) => setRegisterUsername(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-white placeholder-slate-700"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label htmlFor="reg-disp" className="text-[9.5px] text-slate-400 font-bold uppercase block">Display Name</label>
+                  <input
+                    id="reg-disp"
+                    type="text"
+                    required
+                    placeholder="Leo Wave"
+                    value={registerDisplayName}
+                    onChange={(e) => setRegisterDisplayName(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-white placeholder-slate-705"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label htmlFor="reg-location" className="text-[9.5px] text-slate-400 font-bold uppercase block">Location</label>
+                  <input
+                    id="reg-location"
+                    type="text"
+                    placeholder="Tokyo, JP"
+                    value={registerLocation}
+                    onChange={(e) => setRegisterLocation(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-white placeholder-slate-705"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label htmlFor="reg-favsong" className="text-[9.5px] text-slate-400 font-bold uppercase block">Fav Song</label>
+                  <input
+                    id="reg-favsong"
+                    type="text"
+                    placeholder="Fix You"
+                    value={registerFavoriteSong}
+                    onChange={(e) => setRegisterFavoriteSong(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-white placeholder-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label htmlFor="reg-bio" className="text-[9.5px] text-slate-400 font-bold uppercase block">Stargazing Bio</label>
+                <input
+                  id="reg-bio"
+                  type="text"
+                  placeholder="Curating modular space beats..."
+                  value={registerBio}
+                  onChange={(e) => setRegisterBio(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-white placeholder-slate-705"
+                />
+              </div>
+
+              {loginError && (
+                <p className="text-[10px] text-red-400 text-center font-medium animate-pulse">{loginError}</p>
+              )}
+
+              <button
+                type="submit"
+                className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl text-xs tracking-wide shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <span>Create ọnọdụ Account</span>
+                <PlusCircle className="w-4 h-4" />
+              </button>
+            </form>
+          )}
+
+          <footer className="text-[10px] text-slate-500 tracking-wider">
+            Press <kbd className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400 font-mono text-[9px]">Esc</kbd> anytime inside the ecosystem to escape/logout.
+          </footer>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading || !currentUser) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 font-sans text-xs text-gray-500 gap-3">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 font-sans text-xs text-gray-400 gap-3">
         <Disc className="w-10 h-10 animate-spin text-indigo-600" />
-        <span className="font-display font-medium text-slate-800 tracking-wide">Syncing MoodTunes and Spotify chords...</span>
+        <span className="font-display font-medium text-slate-200 tracking-wide">Syncing ọnọdụ and Spotify chords...</span>
       </div>
     );
   }
@@ -620,7 +902,7 @@ export default function App() {
             </div>
             <div>
               <h1 className={`font-display font-bold text-xl tracking-tight bg-gradient-to-r ${isDarkMode ? "from-white via-slate-100 to-slate-350" : "from-slate-900 via-indigo-950 to-slate-900"} bg-clip-text text-transparent`}>
-                MoodTunes
+                ọnọdụ
               </h1>
               <p className="text-[10px] text-gray-400 font-medium">Emotion-driven playlist feeds</p>
             </div>
@@ -672,16 +954,7 @@ export default function App() {
             </button>
             
             
-            {/* Upgrade banner mini trigger if not premium */}
-            {!currentUser.isPremium && (
-              <button 
-                onClick={handleUpgradeToPremium}
-                className="hidden sm:inline-flex items-center gap-1.5 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 px-3.5 py-1.5 rounded-full border border-amber-500/30 text-xs font-semibold cursor-pointer transition-colors"
-              >
-                <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                Get Premium
-              </button>
-            )}
+
 
             {/* Notifications panel toggle button */}
             <div className="relative">
@@ -814,6 +1087,18 @@ export default function App() {
             </button>
 
             <button 
+              onClick={() => setActiveTab("workspace")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                activeTab === "workspace" 
+                  ? activeColorTheme.primaryButton 
+                  : isDarkMode ? "text-slate-400 hover:text-white hover:bg-slate-800/60" : "text-gray-500 hover:text-slate-900 hover:bg-gray-100"
+              }`}
+            >
+              <Cloud className="w-4.5 h-4.5" />
+              <span>Workspace Hub</span>
+            </button>
+
+            <button 
               onClick={() => setActiveTab("profile")}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 activeTab === "profile" 
@@ -836,6 +1121,26 @@ export default function App() {
             >
               <Shield className="w-4.5 h-4.5" />
               <span>Admin Dashboard</span>
+            </button>
+
+            {/* Escape Logout section */}
+            <button 
+              onClick={() => {
+                setIsLoggedIn(false);
+                try {
+                  localStorage.setItem("isLoggedIn", "false");
+                } catch {}
+              }}
+              className="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer text-slate-400 hover:text-red-400 hover:bg-red-500/5"
+              title="Press Escape key at any point to logout instantly"
+            >
+              <div className="flex items-center gap-3">
+                <X className="w-4.5 h-4.5 text-red-400" />
+                <span>Escape (Logout)</span>
+              </div>
+              <kbd className="hidden lg:inline-block px-1.5 py-0.5 text-[9px] font-sans font-normal text-slate-400 bg-slate-800 border border-slate-700/60 rounded select-none">
+                Esc
+              </kbd>
             </button>
 
           </nav>
@@ -1482,6 +1787,14 @@ export default function App() {
               />
             )}
 
+            {/* GOOGLE WORKSPACE HUB TAB */}
+            {activeTab === "workspace" && (
+              <WorkspaceHub 
+                isDarkMode={isDarkMode}
+                playlists={playlists}
+              />
+            )}
+
           </div>
 
         </div>
@@ -1547,64 +1860,13 @@ export default function App() {
               <p className="text-white font-mono italic text-xs leading-relaxed">
                 "{viewingStory.lyricsHighlight || "Sailing through the daily waveforms..."}"
               </p>
-              <div className="pt-2">
-                <button 
-                  onClick={() => {
-                    const matchedUser = users.find((u) => u.id === viewingStory.userId);
-                    if (matchedUser) {
-                      setTippingUser(matchedUser);
-                      setViewingStory(null);
-                    }
-                  }}
-                  className="bg-amber-500 hover:bg-amber-600 font-bold text-[10px] text-white px-5 py-2 rounded-full shadow-md"
-                >
-                  ⚡ Tip Creator @{viewingStory.username}
-                </button>
-              </div>
             </div>
 
           </div>
         </div>
       )}
 
-      {/* Creator Tipping support Dialog overlay modal */}
-      {tippingUser && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 font-sans">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border text-center relative overflow-hidden space-y-4">
-            
-            <button onClick={() => setTippingUser(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-              <X className="w-4.5 h-4.5" />
-            </button>
 
-            <div className="flex flex-col items-center gap-2">
-              <img src={tippingUser.avatar} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-indigo-500/20 shadow-md" referrerPolicy="no-referrer" />
-              <span className="text-[10px] uppercase text-indigo-600 bg-indigo-50 font-bold tracking-wider px-2.5 py-0.5 rounded-full-wide">Creator Hub</span>
-              <h4 className="font-display font-semibold text-slate-900 text-sm">Send support tips to @{tippingUser.username}</h4>
-              <p className="text-xs text-gray-400">100% of tips are dispatched to support independent music creators on MoodTunes!</p>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2.5 py-2">
-              <button onClick={() => supportTipCreator(1)} className="border hover:bg-gray-50 focus:bg-indigo-50 text-indigo-600 border-indigo-100 font-bold py-2.5 px-1 rounded-2xl text-xs flex flex-col items-center justify-center cursor-pointer">
-                <span>$1</span>
-                <span className="text-[9px] text-gray-400 font-normal mt-0.5">Quick cup</span>
-              </button>
-              <button onClick={() => supportTipCreator(5)} className="border hover:bg-gray-50 focus:bg-indigo-50 text-indigo-600 border-indigo-100 font-bold py-2.5 px-1 rounded-2xl text-xs flex flex-col items-center justify-center cursor-pointer">
-                <span>$5</span>
-                <span className="text-[9px] text-gray-400 font-normal mt-0.5">Vinyl spin</span>
-              </button>
-              <button onClick={() => supportTipCreator(10)} className="border hover:bg-gray-50 focus:bg-indigo-50 text-indigo-600 border-indigo-100 font-bold py-2.5 px-1 rounded-2xl text-xs flex flex-col items-center justify-center cursor-pointer">
-                <span>$10</span>
-                <span className="text-[9px] text-gray-400 font-normal mt-0.5">Concert VIP</span>
-              </button>
-            </div>
-
-            <div className="text-[10px] text-gray-400 font-mono">
-              Transactional ID: TXN_CHORDS_MOCK_2026
-            </div>
-            
-          </div>
-        </div>
-      )}
 
     </div>
   );

@@ -115,35 +115,7 @@ export default function MoodAnalytics({
   return (
     <div className="space-y-6">
       
-      {/* Premium Analytics Banner overlay for non-premium */}
-      {!currentUser.isPremium && (
-        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 border border-indigo-500/20 text-white shadow-xl relative overflow-hidden group">
-          
-          {/* Neon sparks */}
-          <div className="absolute top-0 right-0 p-8 opacity-10 flex gap-1 transform rotate-12 group-hover:scale-110 transition-transform">
-            <Zap className="w-24 h-24 text-indigo-400" />
-          </div>
 
-          <div className="relative z-10 max-w-lg">
-            <span className="inline-flex items-center gap-1.5 bg-indigo-500/20 text-indigo-300 font-display text-xs font-semibold px-3 py-1 rounded-full border border-indigo-400/30">
-              <Sparkles className="w-3.5 h-3.5" />
-              PREMIUM FEATURE
-            </span>
-            <h3 className="font-display font-bold text-2xl mt-3 text-white">Unlock Advanced Emotion Reports</h3>
-            <p className="text-indigo-200 text-sm mt-2 leading-relaxed">
-              Unlock the core AI psych-analysis reports, unrestricted weekly mood timeline history, listen ratios, and advanced charts to optimize your mental alignments!
-            </p>
-            <div className="flex gap-4 mt-5">
-              <button 
-                onClick={onUpgradeToPremium}
-                className="bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white font-semibold text-xs px-5 py-2.5 rounded-full shadow-lg transition-all"
-              >
-                Go Premium ($4.99/mo)
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Analytics Main Dashboard Grid */}
       <div className="grid md:grid-cols-3 gap-6">
