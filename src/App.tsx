@@ -1599,6 +1599,7 @@ export default function App() {
                 messages={messages}
                 onSendMessage={handleSendMessage}
                 songsDbRef={songsDb}
+                isDarkMode={isDarkMode}
               />
             )}
 
