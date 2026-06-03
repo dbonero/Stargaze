@@ -177,7 +177,7 @@ export default function WorkspaceHub({ isDarkMode, playlists }: WorkspaceHubProp
       // Find attached track details if any
       let attached: Song | undefined;
       playlists.forEach(pl => {
-        const found = pl.songs.find(s => s.song.spotifyId === selectedSongToEmail);
+        const found = pl.songs.find(s => s.song.trackId === selectedSongToEmail);
         if (found) attached = found.song;
       });
 
@@ -207,8 +207,8 @@ export default function WorkspaceHub({ isDarkMode, playlists }: WorkspaceHubProp
   const addedIds = new Set<string>();
   playlists.forEach(p => {
     p.songs.forEach(ps => {
-      if (!addedIds.has(ps.song.spotifyId)) {
-        addedIds.add(ps.song.spotifyId);
+      if (!addedIds.has(ps.song.trackId)) {
+        addedIds.add(ps.song.trackId);
         allSongs.push(ps.song);
       }
     });
@@ -362,7 +362,7 @@ export default function WorkspaceHub({ isDarkMode, playlists }: WorkspaceHubProp
                     >
                       <option value="none">-- No Attachment --</option>
                       {allSongs.map(s => (
-                        <option key={s.spotifyId} value={s.spotifyId}>
+                        <option key={s.trackId} value={s.trackId}>
                           {s.title} ({s.artist})
                         </option>
                       ))}

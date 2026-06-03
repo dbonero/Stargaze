@@ -798,10 +798,10 @@ export default function DirectMessages({
                 )
                 .map((s) => (
                   <button
-                    key={s.spotifyId}
+                    key={s.trackId}
                     onClick={() => {
                       setAttachedSong(s);
-                      setAttachedLyrics(s.title === "Fix You" ? "Lights will guide you home" : `Sonic alignment: ${s.title}`);
+                      setAttachedLyrics(s.title === "Almost an End" ? "Lights will guide you home" : `Sonic alignment: ${s.title}`);
                       setIsSongSearchOpen(false);
                       setSongSearchQuery("");
                     }}

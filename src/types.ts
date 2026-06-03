@@ -4,7 +4,7 @@
  */
 
 export interface Song {
-  spotifyId: string;
+  trackId: string;
   title: string;
   artist: string;
   album: string;

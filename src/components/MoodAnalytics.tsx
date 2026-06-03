@@ -32,34 +32,34 @@ export default function MoodAnalytics({
     favoriteSongs: [
       {
         song: {
-          spotifyId: "4",
+          trackId: "4",
           title: "Midnight Lo-fi Vibe",
-          artist: "Chillhop Beats",
+          artist: "Josh Woodward",
           album: "Late Night Coffee",
           artworkUrl: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&auto=format&fit=crop&q=80",
-          previewUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
+          previewUrl: "https://www.joshwoodward.com/mp3/JoshWoodward-Effortless.mp3",
         },
         count: 14,
       },
       {
         song: {
-          spotifyId: "6",
-          title: "Cruel Summer",
-          artist: "Taylor Swift",
-          album: "Lover",
+          trackId: "6",
+          title: "Crazy Ones",
+          artist: "Josh Woodward",
+          album: "The Shadowlands",
           artworkUrl: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=300&auto=format&fit=crop&q=80",
-          previewUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
+          previewUrl: "https://www.joshwoodward.com/mp3/JoshWoodward-CrazyOnes.mp3",
         },
         count: 8,
       },
       {
         song: {
-          spotifyId: "2",
-          title: "Fix You",
-          artist: "Coldplay",
-          album: "X&Y",
+          trackId: "2",
+          title: "Almost an End",
+          artist: "Josh Woodward",
+          album: "The Beautiful Letdown",
           artworkUrl: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=300&auto=format&fit=crop&q=80",
-          previewUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+          previewUrl: "https://www.joshwoodward.com/mp3/JoshWoodward-AlmostAnEnd.mp3",
         },
         count: 5,
       }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { 
   Plus, Music, Trash2, ArrowUp, ArrowDown, UserPlus, Disc, Users, X, 
-  Clock, Send, ChevronRight, MessageSquare, User, CheckCircle
+  Clock, Send, ChevronRight, MessageSquare, User, CheckCircle, Play, Pause
 } from "lucide-react";
 import { Playlist, PlaylistSong, Song, User as AppUser, Comment } from "../types";
 import { motion, AnimatePresence } from "motion/react";
@@ -12,6 +12,10 @@ interface CollaborativePlaylistsProps {
   songsDb: Song[];
   initialSelectedPlaylistId?: string | null;
   onClearInitialPlaylistId?: () => void;
+  currentPlayingSong?: Song | null;
+  isPlayingGlobal?: boolean;
+  onPlaySong?: (song: Song) => void;
+  onPauseSong?: () => void;
 }
 
 export default function CollaborativePlaylists({ 
@@ -19,7 +23,11 @@ export default function CollaborativePlaylists({
   users, 
   songsDb,
   initialSelectedPlaylistId,
-  onClearInitialPlaylistId
+  onClearInitialPlaylistId,
+  currentPlayingSong,
+  isPlayingGlobal,
+  onPlaySong,
+  onPauseSong
 }: CollaborativePlaylistsProps) {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
@@ -221,7 +229,7 @@ export default function CollaborativePlaylists({
     }
     setIsSearching(true);
     try {
-      const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(val)}`);
+      const res = await fetch(`/api/music/search?q=${encodeURIComponent(val)}`);
       if (res.ok) {
         const data = await res.json();
         setSearchResults(data);
@@ -559,13 +567,34 @@ export default function CollaborativePlaylists({
                 </div>
 
                 {isSearching ? (
-                  <div className="text-center py-4 text-[10px] text-gray-400">Syncing with Spotify index...</div>
+                  <div className="text-center py-4 text-[10px] text-gray-400">Syncing with Onodu Stream Network...</div>
                 ) : (
                   <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                     {searchResults.map((song) => (
-                      <div key={song.spotifyId} className="flex items-center justify-between p-2 bg-slate-50 border border-gray-100 rounded-2xl">
+                      <div key={song.trackId} className="flex items-center justify-between p-2 bg-slate-50 border border-gray-100 rounded-2xl">
                         <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
-                          <img src={song.artworkUrl} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                          <div className="relative w-8 h-8 rounded-lg overflow-hidden shrink-0 group/search-art">
+                            <img src={song.artworkUrl} alt="" className="w-full h-full object-cover" />
+                            {song.previewUrl && (
+                              <button
+                                onClick={() => {
+                                  if (currentPlayingSong?.trackId === song.trackId && isPlayingGlobal) {
+                                    onPauseSong?.();
+                                  } else {
+                                    onPlaySong?.(song);
+                                  }
+                                }}
+                                className="absolute inset-0 bg-black/50 opacity-0 group-hover/search-art:opacity-105 flex items-center justify-center text-white transition-opacity cursor-pointer"
+                                title="Play preview"
+                              >
+                                {currentPlayingSong?.trackId === song.trackId && isPlayingGlobal ? (
+                                  <Pause className="w-3 h-3 text-emerald-400 fill-emerald-400" />
+                                ) : (
+                                  <Play className="w-3 h-3 text-white fill-white ml-0.5" />
+                                )}
+                              </button>
+                            )}
+                          </div>
                           <div className="min-w-0 flex-1">
                             <h5 className="font-semibold text-slate-800 text-xs truncate leading-tight">{song.title}</h5>
                             <span className="text-[10px] text-gray-400 block truncate">{song.artist}</span>
@@ -606,29 +635,53 @@ export default function CollaborativePlaylists({
                     <div className="text-center py-16">
                       <Music className="w-8 h-8 text-indigo-200 mx-auto animate-bounce" />
                       <p className="text-xs font-display text-gray-400 mt-3">This collaborative stream is empty.</p>
-                      <span className="text-[10px] text-gray-400 block mt-1">Use the Spotify search box on the left to start adding your fav songs!</span>
+                      <span className="text-[10px] text-gray-400 block mt-1">Use the Soundstream search box on the left to start adding your fav songs!</span>
                     </div>
                   ) : (
-                    selectedPlaylist.songs.map((playlistSong, index) => {
-                      const commentsExpanded = !!expandedSongComments[playlistSong.id];
-                      return (
-                        <div 
-                          key={playlistSong.id}
-                          className="bg-white border border-gray-100 rounded-3xl p-3 md:p-4 hover:border-indigo-150 transition-all shadow-xs"
-                        >
-                          {/* Inner row */}
-                          <div className="flex items-center justify-between gap-3">
-                            
-                            {/* Track details */}
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <span className="text-xs font-mono font-bold text-gray-300 w-4 shrink-0 text-center">
-                                {index + 1}
-                              </span>
-                              <img 
-                                src={playlistSong.song.artworkUrl} 
-                                alt="" 
-                                className="w-12 h-12 rounded-xl object-cover shrink-0 border border-gray-50 shadow-xs" 
-                              />
+                      selectedPlaylist.songs.map((playlistSong, index) => {
+                        const commentsExpanded = !!expandedSongComments[playlistSong.id];
+                        return (
+                          <div 
+                            key={playlistSong.id}
+                            className="bg-white border border-gray-100 rounded-3xl p-3 md:p-4 hover:border-indigo-150 transition-all shadow-xs"
+                          >
+                            {/* Inner row */}
+                            <div className="flex items-center justify-between gap-3">
+                              
+                              {/* Track details */}
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <span className="text-xs font-mono font-bold text-gray-300 w-4 shrink-0 text-center">
+                                  {index + 1}
+                                </span>
+                                <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-gray-50 shadow-xs group/artwork">
+                                  <img 
+                                    src={playlistSong.song.artworkUrl} 
+                                    alt="" 
+                                    className="w-full h-full object-cover" 
+                                  />
+                                  {playlistSong.song.previewUrl && (
+                                    <button
+                                      onClick={() => {
+                                        if (currentPlayingSong?.trackId === playlistSong.song.trackId && isPlayingGlobal) {
+                                          onPauseSong?.();
+                                        } else {
+                                          onPlaySong?.(playlistSong.song);
+                                        }
+                                      }}
+                                      className="absolute inset-0 bg-black/50 opacity-0 group-hover/artwork:opacity-100 flex items-center justify-center text-white transition-opacity cursor-pointer"
+                                      title="Play song"
+                                    >
+                                      {currentPlayingSong?.trackId === playlistSong.song.trackId && isPlayingGlobal ? (
+                                        <Pause className="w-4 h-4 text-emerald-400 fill-emerald-400" />
+                                      ) : (
+                                        <Play className="w-4 h-4 text-white fill-white ml-0.5" />
+                                      )}
+                                    </button>
+                                  )}
+                                  {currentPlayingSong?.trackId === playlistSong.song.trackId && isPlayingGlobal && (
+                                  <div className="absolute bottom-1 right-1 w-2 h-2 bg-emerald-400 rounded-full animate-ping" />
+                                )}
+                              </div>
                               <div className="min-w-0 flex-1">
                                 <h5 className="font-semibold text-gray-900 text-xs sm:text-sm truncate leading-tight flex items-center gap-1.5">
                                   {playlistSong.song.title}

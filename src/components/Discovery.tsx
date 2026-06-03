@@ -16,6 +16,33 @@ interface DiscoveryProps {
   currentUser: User;
   onFollowToggle: (userId: string) => void;
   onPostSelectSong?: (song: Song) => void;
+  currentPlayingSong?: Song | null;
+  isPlayingGlobal?: boolean;
+  onPlaySong?: (song: Song, stationId?: string | null) => void;
+  onPauseSong?: () => void;
+  globalCurrentTime?: number;
+  globalDuration?: number;
+  globalVolume?: number;
+  isGlobalMuted?: boolean;
+  onSeekGlobal?: (time: number) => void;
+  onVolumeGlobal?: (vol: number) => void;
+  onMuteGlobal?: () => void;
+  activeStationId?: string | null;
+  sharedRoomListeners?: number;
+  floatingEmojis?: { id: string; char: string; left: number }[];
+  sharedLoungeChat?: {
+    id: string;
+    username: string;
+    displayName: string;
+    avatar: string;
+    content: string;
+    timestamp: string;
+  }[];
+  isAiDjSpeaking?: boolean;
+  aiDjSpeech?: string;
+  onTuneToAiDjRadio?: () => void;
+  onSendLoungeReaction?: (char: string) => void;
+  onSendLoungeChat?: (text: string) => void;
 }
 
 export default function Discovery({
@@ -24,6 +51,26 @@ export default function Discovery({
   currentUser,
   onFollowToggle,
   onPostSelectSong,
+  currentPlayingSong,
+  isPlayingGlobal,
+  onPlaySong,
+  onPauseSong,
+  globalCurrentTime = 0,
+  globalDuration = 1,
+  globalVolume = 0.85,
+  isGlobalMuted = false,
+  onSeekGlobal,
+  onVolumeGlobal,
+  onMuteGlobal,
+  activeStationId,
+  sharedRoomListeners = 0,
+  floatingEmojis = [],
+  sharedLoungeChat = [],
+  isAiDjSpeaking = false,
+  aiDjSpeech = "",
+  onTuneToAiDjRadio,
+  onSendLoungeReaction,
+  onSendLoungeChat
 }: DiscoveryProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "songs" | "creators">("all");
@@ -43,6 +90,12 @@ export default function Discovery({
   const [currentTime, setCurrentTime] = useState(0);
   const [totalDuration, setTotalDuration] = useState(1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const checkIsSongPlaying = (id: string) => {
+    return onPlaySong && currentPlayingSong && isPlayingGlobal 
+      ? (currentPlayingSong.trackId === id)
+      : (playingId === id);
+  };
 
   const fetchLyrics = async (song: Song) => {
     setIsLoadingLyrics(true);
@@ -66,20 +119,34 @@ export default function Discovery({
     if (!term || term.trim().length < 2) return;
     setIsGlobalSearching(true);
     try {
-      const resp = await fetch(`/api/spotify/search?q=${encodeURIComponent(term)}`);
+      const resp = await fetch(`/api/music/search?q=${encodeURIComponent(term)}`);
       if (resp.ok) {
         const data = await resp.json();
         setGlobalSongs(data);
       }
     } catch (err) {
-      console.warn("Global Spotify AI locator failed:", err);
+      console.warn("Global Onodu AI locator failed:", err);
     } finally {
       setIsGlobalSearching(false);
     }
   };
 
   const toggleSongPlay = (song: Song) => {
-    if (playingId === song.spotifyId) {
+    if (!lyricsSong || lyricsSong.trackId !== song.trackId) {
+      setLyricsSong(song);
+      fetchLyrics(song);
+    }
+
+    if (onPlaySong && onPauseSong) {
+      if (currentPlayingSong?.trackId === song.trackId && isPlayingGlobal) {
+        onPauseSong();
+      } else {
+        onPlaySong(song);
+      }
+      return;
+    }
+
+    if (playingId === song.trackId) {
       if (audioRef.current) audioRef.current.pause();
       setPlayingId(null);
     } else {
@@ -101,25 +168,47 @@ export default function Discovery({
       });
 
       audio.play().catch(() => {});
-      setPlayingId(song.spotifyId);
-      setLyricsSong(song);
-      fetchLyrics(song);
+      setPlayingId(song.trackId);
     }
   };
 
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const isGlobalUsed = onPlaySong && currentPlayingSong && isPlayingGlobal && (lyricsSong?.trackId === currentPlayingSong.trackId);
+  const playStateCurrentTime = isGlobalUsed ? globalCurrentTime : currentTime;
+  const playStateDuration = isGlobalUsed ? globalDuration : totalDuration;
+  const playStateVolume = isGlobalUsed ? globalVolume : audioVolume;
+  const playStateMuted = isGlobalUsed ? isGlobalMuted : isMuted;
+
+  const handleApplySeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const seekVal = parseFloat(e.target.value);
+    if (isGlobalUsed && onSeekGlobal) {
+      onSeekGlobal(seekVal);
+    } else {
+      setCurrentTime(seekVal);
+      if (audioRef.current) audioRef.current.currentTime = seekVal;
+    }
+  };
+
+  const handleApplyVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
-    setAudioVolume(val);
-    if (audioRef.current) {
-      audioRef.current.volume = isMuted ? 0 : val;
+    if (isGlobalUsed && onVolumeGlobal) {
+      onVolumeGlobal(val);
+    } else {
+      setAudioVolume(val);
+      if (audioRef.current) {
+        audioRef.current.volume = isMuted ? 0 : val;
+      }
     }
   };
 
-  const toggleMute = () => {
-    const nextMute = !isMuted;
-    setIsMuted(nextMute);
-    if (audioRef.current) {
-      audioRef.current.volume = nextMute ? 0 : audioVolume;
+  const handleApplyMute = () => {
+    if (isGlobalUsed && onMuteGlobal) {
+      onMuteGlobal();
+    } else {
+      const nextMute = !isMuted;
+      setIsMuted(nextMute);
+      if (audioRef.current) {
+        audioRef.current.volume = nextMute ? 0 : audioVolume;
+      }
     }
   };
 
@@ -159,10 +248,10 @@ export default function Discovery({
       s.album.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Merge local list and globally found songs ensuring no duplicate spotifyId
+  // Merge local list and globally found songs ensuring no duplicate trackId
   const combinedMap = new Map<string, Song>();
-  matchingSongs.forEach((s) => combinedMap.set(s.spotifyId, s));
-  globalSongs.forEach((s) => combinedMap.set(s.spotifyId, s));
+  matchingSongs.forEach((s) => combinedMap.set(s.trackId, s));
+  globalSongs.forEach((s) => combinedMap.set(s.trackId, s));
   const displayedSongs = Array.from(combinedMap.values());
 
   const matchingCreators = users.filter(
@@ -174,9 +263,9 @@ export default function Discovery({
   );
 
   const TRENDING_LYRICS = [
-    { text: "Fever dream high in the quiet of the night", song: "Cruel Summer", artist: "Taylor Swift" },
-    { text: "Well, good for you, I guess you moved on easily", song: "Good 4 U", artist: "Olivia Rodrigo" },
-    { text: "Lights will guide you home", song: "Fix You", artist: "Coldplay" },
+    { text: "Cherub, let me stay alignment with your sky", song: "Cherub", artist: "Josh Woodward" },
+    { text: "Are you ready for the crazy ones inside", song: "Crazy Ones", artist: "Josh Woodward" },
+    { text: "Lights will guide you home", song: "Almost an End", artist: "Josh Woodward" },
   ];
 
   const TRENDING_MOODS = [
@@ -232,9 +321,217 @@ export default function Discovery({
               {isGlobalSearching ? "Locating..." : "Locate via AI"}
             </button>
           </div>
+        </div>
 
-          {/* Filtering tabs */}
-          <div className="flex gap-2">
+        {/* ================= REAL-TIME CO-LISTENING LOUNGES ================= */}
+        <div className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-[9px] bg-indigo-50 border border-indigo-150 text-indigo-700 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider font-mono">
+                🔴 Persistent Streams
+              </span>
+              <h3 className="font-display font-bold text-gray-950 text-base mt-2 flex items-center gap-1.5">
+                Onodu Co-listening Lounges
+              </h3>
+              <p className="text-[11px] text-gray-400">Join immersive sync rooms listening to tracks collectively in real time</p>
+            </div>
+            
+            {activeStationId && (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-full animate-pulse shrink-0 font-mono">
+                <Users className="w-3.5 h-3.5 animate-bounce" />
+                <span>ACTIVE LINK</span>
+              </span>
+            )}
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-4">
+            {/* Station 1 */}
+            <div 
+              onClick={() => {
+                const subSong = songsDb.find(s => s.title === "Midnight Lo-fi Vibe") || songsDb[0];
+                if (subSong && onPlaySong) {
+                  onPlaySong(subSong, "station_sun");
+                }
+              }}
+              className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between h-40 ${
+                activeStationId === "station_sun"
+                  ? "bg-slate-950 border-slate-900 text-white shadow-md ring-2 ring-indigo-500/25"
+                  : "bg-orange-50/25 hover:bg-orange-50/45 border-orange-100/70 text-slate-800"
+              }`}
+            >
+              <div className="flex justify-between items-start">
+                <span className="text-[18px]">🌅</span>
+                <span className="text-[9px] font-mono tracking-wider bg-orange-100/50 dark:bg-slate-800 text-orange-600 px-1.5 py-0.5 rounded font-bold">
+                  SUNSET
+                </span>
+              </div>
+              <div className="mt-4">
+                <h4 className="font-semibold text-xs leading-none">Sunset Chillout</h4>
+                <p className="text-[10px] text-gray-400 mt-1.5 truncate">Felt by: Chloe & Marcus</p>
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-gray-400 border-t border-gray-100/10 pt-2.5 mt-2">
+                <span className="flex items-center gap-1 text-[9px]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>{activeStationId === "station_sun" ? sharedRoomListeners : 24} listening</span>
+                </span>
+                <Play className="w-3 h-3 text-indigo-500 fill-current" />
+              </div>
+            </div>
+
+            {/* Station 2 */}
+            <div 
+              onClick={() => {
+                const subSong = songsDb.find(s => s.title === "Midnight Lo-fi Vibe") || songsDb[0];
+                if (subSong && onPlaySong) {
+                  onPlaySong(subSong, "station_cafe");
+                }
+              }}
+              className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between h-40 ${
+                activeStationId === "station_cafe"
+                  ? "bg-slate-950 border-slate-900 text-white shadow-md ring-2 ring-indigo-500/25"
+                  : "bg-indigo-50/15 hover:bg-indigo-50/35 border-indigo-100/60 text-slate-800"
+              }`}
+            >
+              <div className="flex justify-between items-start">
+                <span className="text-[18px]">☕</span>
+                <span className="text-[9px] font-mono tracking-wider bg-indigo-100/50 dark:bg-slate-800 text-indigo-600 px-1.5 py-0.5 rounded font-bold">
+                  CAFÉ LO-FI
+                </span>
+              </div>
+              <div className="mt-4">
+                <h4 className="font-semibold text-xs leading-none">Midnight Wave</h4>
+                <p className="text-[10px] text-gray-400 mt-1.5 truncate">Felt by: Luna, Miles & Marcus</p>
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-gray-400 border-t border-gray-100/10 pt-2.5 mt-2">
+                <span className="flex items-center gap-1 text-[9px]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>{activeStationId === "station_cafe" ? sharedRoomListeners : 18} listening</span>
+                </span>
+                <Play className="w-3 h-3 text-indigo-500 fill-current" />
+              </div>
+            </div>
+
+            {/* Station 3 */}
+            <div 
+              onClick={() => {
+                if (onTuneToAiDjRadio) {
+                  onTuneToAiDjRadio();
+                }
+              }}
+              className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between h-40 ${
+                activeStationId === "station_ai_radio"
+                  ? "bg-gradient-to-br from-slate-950 to-indigo-950 border-slate-950 text-white shadow-md ring-2 ring-indigo-500/20"
+                  : "bg-purple-50/20 hover:bg-purple-50/45 border-purple-100/60 text-slate-800"
+              }`}
+            >
+              <div className="flex justify-between items-start">
+                <span className="text-[18px]">🎙️</span>
+                <span className="text-[9px] font-mono tracking-wider bg-purple-100/50 dark:bg-slate-800 text-purple-600 px-1.5 py-0.5 rounded font-bold">
+                  AI DJ STREAM
+                </span>
+              </div>
+              <div className="mt-4">
+                <h4 className="font-semibold text-xs leading-none flex items-center gap-1">
+                  Onodu AI DJ 
+                  <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" />
+                </h4>
+                <p className="text-[10px] text-gray-400 mt-1.5 truncate">Voiceover intros by DJ Spark</p>
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-gray-400 border-t border-gray-100/10 pt-2.5 mt-2">
+                <span className="flex items-center gap-1 text-[9px]">
+                  <span className="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse" />
+                  <span>{activeStationId === "station_ai_radio" ? sharedRoomListeners : 31} tuned</span>
+                </span>
+                <Sparkles className="w-3 h-3 text-purple-500 fill-current" />
+              </div>
+            </div>
+          </div>
+
+          {/* Connected Room Sync Chat-bar & React Deck */}
+          {activeStationId && (
+            <div className="p-4 rounded-2xl bg-gray-50 border border-gray-150 relative overflow-hidden space-y-4">
+              
+              {/* Floating elements stage */}
+              <div className="absolute inset-0 z-0 pointer-events-none">
+                {floatingEmojis.map((e) => (
+                  <span 
+                    key={e.id}
+                    className="absolute text-xl animate-[bounce_3s_ease-in-out_infinite] opacity-80"
+                    style={{ left: `${e.left}%`, bottom: "10px" }}
+                  >
+                    {e.char}
+                  </span>
+                ))}
+              </div>
+
+              <div className="relative z-10 flex justify-between items-center bg-gray-50/80 backdrop-blur-sm pb-1 border-b border-gray-200">
+                <span className="text-[9px] font-extrabold text-indigo-600 uppercase tracking-widest flex items-center gap-1 font-mono">
+                  💬 SYNC CHATTER LOUNGE — {activeStationId.split("_")[1].toUpperCase()}
+                </span>
+                
+                {/* Micro Reactions container */}
+                <div className="flex items-center gap-1">
+                  {["❤️", "🔥", "⚡", "🎉", "👏"].map((char) => (
+                    <button 
+                      key={char}
+                      onClick={() => onSendLoungeReaction?.(char)}
+                      className="text-xs p-1 bg-white hover:scale-115 active:scale-95 border rounded-lg transition-transform cursor-pointer"
+                    >
+                      {char}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Chat lines logger */}
+              <div className="relative z-10 space-y-2.5 max-h-36 overflow-y-auto pr-1">
+                {sharedLoungeChat.map((c) => (
+                  <div key={c.id} className="flex gap-2.5 items-start text-xs">
+                    <img src={c.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"} alt="" className="w-6 h-6 rounded-full object-cover shrink-0 border" />
+                    <div className="min-w-0 bg-white px-2.5 py-1.5 rounded-xl border border-gray-150 flex-1">
+                      <div className="flex justify-between items-baseline gap-2">
+                        <span className="font-semibold text-gray-800 text-[10px] block">{c.displayName}</span>
+                        <span className="text-[8px] text-gray-400">{c.timestamp}</span>
+                      </div>
+                      <span className="text-gray-650 block text-[11px] mt-0.5 leading-snug">{c.content}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Instant Messenger chat builder */}
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const fd = new FormData(e.currentTarget);
+                  const txt = fd.get("messageText") as string;
+                  if (txt && txt.trim() && onSendLoungeChat) {
+                    onSendLoungeChat(txt.trim());
+                    e.currentTarget.reset();
+                  }
+                }}
+                className="relative z-10 flex gap-2"
+              >
+                <input 
+                  type="text" 
+                  name="messageText"
+                  placeholder="Drop a wave in the team stream lounge..." 
+                  className="flex-1 text-[11px] px-3.5 py-2 border rounded-xl bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 shadow-inner"
+                />
+                <button 
+                  type="submit"
+                  className="bg-indigo-650 hover:bg-indigo-755 text-white font-bold text-[11px] px-4 py-2 rounded-xl active:scale-95 cursor-pointer shadow-sm transition-transform"
+                >
+                  Sync
+                </button>
+              </form>
+
+            </div>
+          )}
+        </div>
+
+        {/* Filtering tabs */}
+        <div className="flex gap-2">
             {(["all", "songs", "creators"] as const).map((tab) => (
               <button
                 key={tab}
@@ -249,7 +546,6 @@ export default function Discovery({
               </button>
             ))}
           </div>
-        </div>
 
         {/* Query Results Roll */}
         <div className="space-y-4">
@@ -275,9 +571,9 @@ export default function Discovery({
                 <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
                   {displayedSongs.map((song) => (
                     <div 
-                      key={song.spotifyId} 
+                      key={song.trackId} 
                       className={`p-3 rounded-2xl border transition-all flex items-center justify-between gap-4 group ${
-                        playingId === song.spotifyId 
+                        checkIsSongPlaying(song.trackId) 
                           ? "bg-gradient-to-r from-indigo-50/80 to-white border-indigo-200 shadow-sm" 
                           : "bg-gray-50/40 hover:bg-gray-50 border-gray-100/40"
                       }`}
@@ -289,14 +585,14 @@ export default function Discovery({
                             onClick={() => toggleSongPlay(song)}
                             className="absolute inset-0 flex items-center justify-center bg-black/60 text-white opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
                           >
-                            {playingId === song.spotifyId ? (
+                            {checkIsSongPlaying(song.trackId) ? (
                               <Pause className="w-4.5 h-4.5" />
                             ) : (
                               <Play className="w-4.5 h-4.5 fill-current" />
                             )}
                           </button>
                           
-                          {playingId === song.spotifyId && (
+                          {checkIsSongPlaying(song.trackId) && (
                             <div className="absolute bottom-1 right-1 flex gap-0.5 items-end h-2.5 bg-black/50 px-1 rounded-xs">
                               <span className="w-0.5 bg-indigo-400 h-1.5 animate-[pulse_0.8s_infinite]" />
                               <span className="w-0.5 bg-indigo-400 h-2.5 animate-[pulse_1.2s_infinite]" />
@@ -306,8 +602,8 @@ export default function Discovery({
                         </div>
                         <div className="min-w-0">
                           <h5 className="font-display font-medium text-gray-900 text-xs truncate leading-tight flex items-center gap-1.5">
-                            {song.title}
-                            {song.spotifyId.startsWith("gen_grounded_") && (
+                             {song.title}
+                            {song.trackId.startsWith("gen_grounded_") && (
                               <span className="text-[8px] bg-indigo-50 border border-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">World</span>
                             )}
                           </h5>
@@ -432,7 +728,7 @@ export default function Discovery({
                   <Sparkles className="w-3 h-3 text-indigo-300" /> Grounded AI Player
                 </span>
                 
-                {playingId === lyricsSong.spotifyId && (
+                {checkIsSongPlaying(lyricsSong.trackId) && (
                   <div className="flex gap-1 items-end h-4 font-mono text-[9px] text-emerald-400">
                     <span className="w-1 bg-emerald-400 h-2 animate-[pulse_0.7s_infinite]" />
                     <span className="w-1 bg-emerald-400 h-4 animate-[pulse_1s_infinite]" />
@@ -446,7 +742,7 @@ export default function Discovery({
               <div className="flex gap-3 items-center">
                 <div className="relative w-14 h-14 rounded-2xl overflow-hidden shadow-md bg-indigo-900 border border-white/10 flex-shrink-0 animate-pulse" style={{ animationDuration: "8s" }}>
                   <img src={lyricsSong.artworkUrl} alt="" className="w-full h-full object-cover" />
-                  {playingId === lyricsSong.spotifyId && (
+                  {checkIsSongPlaying(lyricsSong.trackId) && (
                     <div className="absolute inset-x-0 bottom-0 bg-black/40 py-0.5 flex justify-center">
                       <Music className="w-3.5 h-3.5 text-indigo-400 animate-bounce" />
                     </div>
@@ -463,17 +759,17 @@ export default function Discovery({
               <div className="bg-white/5 border border-white/5 rounded-2xl p-3 space-y-2 text-xs">
                 {/* Seek Slider bar */}
                 <div className="flex items-center gap-2">
-                  <span className="text-[9px] text-gray-400 font-mono w-8 text-right">{formatTime(currentTime)}</span>
+                  <span className="text-[9px] text-gray-400 font-mono w-8 text-right">{formatTime(playStateCurrentTime)}</span>
                   <input 
                     type="range"
                     min="0"
-                    max={totalDuration}
+                    max={playStateDuration}
                     step="0.1"
-                    value={currentTime}
-                    onChange={handleSeek}
+                    value={playStateCurrentTime}
+                    onChange={handleApplySeek}
                     className="flex-1 accent-indigo-400 bg-white/10 rounded-lg appearance-none h-1.5 cursor-pointer selection:outline-none"
                   />
-                  <span className="text-[9px] text-gray-400 font-mono w-8">{formatTime(totalDuration)}</span>
+                  <span className="text-[9px] text-gray-400 font-mono w-8">{formatTime(playStateDuration)}</span>
                 </div>
 
                 {/* Sub-controls panel */}
@@ -484,7 +780,7 @@ export default function Discovery({
                     onClick={() => toggleSongPlay(lyricsSong)}
                     className="bg-indigo-600 hover:bg-indigo-500 rounded-full p-2.5 shadow-md flex items-center justify-center active:scale-95 transition-all text-white cursor-pointer"
                   >
-                    {playingId === lyricsSong.spotifyId ? (
+                    {checkIsSongPlaying(lyricsSong.trackId) ? (
                       <Pause className="w-4 h-4 fill-current" />
                     ) : (
                       <Play className="w-4 h-4 fill-current ml-0.5" />
@@ -493,16 +789,16 @@ export default function Discovery({
 
                   {/* Volume Slider bar */}
                   <div className="flex items-center gap-2 max-w-[120px] bg-black/10 px-2.5 py-1 rounded-xl border border-white/5">
-                    <button onClick={toggleMute} className="text-gray-400 hover:text-white transition-colors cursor-pointer">
-                      {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4" />}
+                    <button onClick={handleApplyMute} className="text-gray-400 hover:text-white transition-colors cursor-pointer">
+                      {playStateMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4" />}
                     </button>
                     <input 
                       type="range"
                       min="0"
                       max="1"
                       step="0.05"
-                      value={audioVolume}
-                      onChange={handleVolumeChange}
+                      value={playStateVolume}
+                      onChange={handleApplyVolume}
                       className="w-12 accent-indigo-400 cursor-pointer h-1 rounded-lg appearance-none bg-white/20"
                     />
                   </div>

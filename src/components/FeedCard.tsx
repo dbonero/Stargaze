@@ -23,6 +23,10 @@ interface FeedCardProps {
   onMute?: (userId: string) => void;
   onDelete?: (postId: string) => void;
   isAdmin?: boolean;
+  currentPlayingSong?: Song | null;
+  isPlayingGlobal?: boolean;
+  onPlaySong?: (song: Song) => void;
+  onPauseSong?: () => void;
 }
 
 export default function FeedCard({
@@ -36,7 +40,11 @@ export default function FeedCard({
   onBlock,
   onMute,
   onDelete,
-  isAdmin = false
+  isAdmin = false,
+  currentPlayingSong,
+  isPlayingGlobal,
+  onPlaySong,
+  onPauseSong
 }: FeedCardProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -44,6 +52,10 @@ export default function FeedCard({
   const [showRepostModal, setShowRepostModal] = useState(false);
   const [repostText, setRepostText] = useState("");
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
+
+  const isCurrentlyPlaying = onPlaySong && currentPlayingSong && post.song
+    ? (currentPlayingSong.trackId === post.song.trackId && isPlayingGlobal)
+    : isPlaying;
 
   // Audio elements
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -63,6 +75,17 @@ export default function FeedCard({
 
   const togglePlayback = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!post.song) return;
+
+    if (onPlaySong && onPauseSong) {
+      if (currentPlayingSong?.trackId === post.song.trackId && isPlayingGlobal) {
+        onPauseSong();
+      } else {
+        onPlaySong(post.song);
+      }
+      return;
+    }
+
     if (!audioRef.current) return;
     if (isPlaying) {
       audioRef.current.pause();
@@ -240,7 +263,7 @@ export default function FeedCard({
               onClick={togglePlayback}
               className="absolute inset-0 flex items-center justify-center bg-black/60 hover:bg-black/75 transition-colors text-white cursor-pointer"
             >
-              {isPlaying ? (
+              {isCurrentlyPlaying ? (
                 <div className="flex gap-0.5 items-end h-4">
                   <span className="w-0.5 bg-emerald-400 animate-[pulse_0.8s_infinite] h-2.5" />
                   <span className="w-0.5 bg-emerald-400 animate-[pulse_1.2s_infinite] h-4" />

@@ -52,104 +52,104 @@ const MOCK_PHOTOS = [
 
 const SONG_DATABASE: Song[] = [
   {
-    spotifyId: "1",
-    title: "Blinding Lights",
-    artist: "The Weeknd",
-    album: "After Hours",
+    trackId: "1",
+    title: "Cherub",
+    artist: "Josh Woodward",
+    album: "The Beautiful Letdown",
     artworkUrl: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&auto=format&fit=crop&q=80",
-    previewUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-    externalUrl: "https://open.spotify.com/track/0VjIj7vR2Zg73GgXnZg6RE",
-    durationMs: 200000,
+    previewUrl: "https://www.joshwoodward.com/mp3/JoshWoodward-Cherub.mp3",
+    externalUrl: "https://www.joshwoodward.com/song/Cherub",
+    durationMs: 254000,
   },
   {
-    spotifyId: "2",
-    title: "Fix You",
-    artist: "Coldplay",
-    album: "X&Y",
+    trackId: "2",
+    title: "Almost an End",
+    artist: "Josh Woodward",
+    album: "The Beautiful Letdown",
     artworkUrl: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=300&auto=format&fit=crop&q=80",
-    previewUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-    externalUrl: "https://open.spotify.com/track/7LVHVv6360Jg6JvUF6PK0w",
-    durationMs: 295000,
+    previewUrl: "https://www.joshwoodward.com/mp3/JoshWoodward-AlmostAnEnd.mp3",
+    externalUrl: "https://www.joshwoodward.com/song/AlmostAnEnd",
+    durationMs: 147000,
   },
   {
-    spotifyId: "3",
-    title: "Good 4 U",
-    artist: "Olivia Rodrigo",
-    album: "SOUR",
+    trackId: "3",
+    title: "I Want to Destroy Something Beautiful",
+    artist: "Josh Woodward",
+    album: "Addressed to the Stars",
     artworkUrl: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=300&auto=format&fit=crop&q=80",
-    previewUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
-    externalUrl: "https://open.spotify.com/track/4ZtFanR9U6ndgddIK35v98",
-    durationMs: 178000,
+    previewUrl: "https://www.joshwoodward.com/mp3/JoshWoodward-IWantToDestroySomethingBeautiful.mp3",
+    externalUrl: "https://www.joshwoodward.com/song/IWantToDestroySomethingBeautiful",
+    durationMs: 201000,
   },
   {
-    spotifyId: "4",
+    trackId: "4",
     title: "Midnight Lo-fi Vibe",
-    artist: "Chillhop Beats",
+    artist: "Josh Woodward",
     album: "Late Night Coffee",
     artworkUrl: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&auto=format&fit=crop&q=80",
-    previewUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
-    externalUrl: "https://open.spotify.com/track/3lVUkZpHbT8pYeeJlhIuB4",
-    durationMs: 154000,
+    previewUrl: "https://www.joshwoodward.com/mp3/JoshWoodward-Effortless.mp3",
+    externalUrl: "https://www.joshwoodward.com/song/Effortless",
+    durationMs: 195000,
   },
   {
-    spotifyId: "5",
-    title: "As It Was",
-    artist: "Harry Styles",
-    album: "Harry's House",
+    trackId: "5",
+    title: "I'm Letting Go",
+    artist: "Josh Woodward",
+    album: "Not Quite Connected",
     artworkUrl: "https://images.unsplash.com/photo-1481887328591-3e277f9473dc?w=300&auto=format&fit=crop&q=80",
-    previewUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
-    externalUrl: "https://open.spotify.com/track/4pt5fD685v7UPgNW7W96g6",
-    durationMs: 167000,
+    previewUrl: "https://www.joshwoodward.com/mp3/JoshWoodward-ImLettingGo.mp3",
+    externalUrl: "https://www.joshwoodward.com/song/ImLettingGo",
+    durationMs: 209000,
   },
   {
-    spotifyId: "6",
-    title: "Cruel Summer",
-    artist: "Taylor Swift",
-    album: "Lover",
+    trackId: "6",
+    title: "Crazy Ones",
+    artist: "Josh Woodward",
+    album: "The Shadowlands",
     artworkUrl: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=300&auto=format&fit=crop&q=80",
-    previewUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
-    externalUrl: "https://open.spotify.com/track/1BxfEXWb0xy6f06v2X06uA",
-    durationMs: 178000,
+    previewUrl: "https://www.joshwoodward.com/mp3/JoshWoodward-CrazyOnes.mp3",
+    externalUrl: "https://www.joshwoodward.com/song/CrazyOnes",
+    durationMs: 182050,
   },
   {
-    spotifyId: "7",
-    title: "Ocean Eyes",
-    artist: "Billie Eilish",
-    album: "Don't Smile at Me",
+    trackId: "7",
+    title: "Memory Lane",
+    artist: "Josh Woodward",
+    album: "The Simple Life",
     artworkUrl: "https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=300&auto=format&fit=crop&q=80",
-    previewUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
-    externalUrl: "https://open.spotify.com/track/7hDV9tEEgUbgY2uYfO619f",
-    durationMs: 200000,
+    previewUrl: "https://www.joshwoodward.com/mp3/JoshWoodward-MemoryLane.mp3",
+    externalUrl: "https://www.joshwoodward.com/song/MemoryLane",
+    durationMs: 188000,
   },
   {
-    spotifyId: "8",
-    title: "Stronger",
-    artist: "Kanye West",
-    album: "Graduation",
+    trackId: "8",
+    title: "The Coffee Song",
+    artist: "Josh Woodward",
+    album: "Breadcrumbs",
     artworkUrl: "https://images.unsplash.com/photo-1483412033650-1015ddeb83d1?w=300&auto=format&fit=crop&q=80",
-    previewUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
-    externalUrl: "https://open.spotify.com/track/4gph9UgEDm7vY48726Cg7A",
-    durationMs: 311000,
+    previewUrl: "https://www.joshwoodward.com/mp3/JoshWoodward-TheCoffeeSong.mp3",
+    externalUrl: "https://www.joshwoodward.com/song/TheCoffeeSong",
+    durationMs: 184000,
   },
   {
-    spotifyId: "9",
-    title: "Feeling Good",
-    artist: "Nina Simone",
-    album: "I Put a Spell on You",
+    trackId: "9",
+    title: "Perfect",
+    artist: "Josh Woodward",
+    album: "Not Quite Connected",
     artworkUrl: "https://images.unsplash.com/photo-1516280440614-37939bbacd6a?w=300&auto=format&fit=crop&q=80",
-    previewUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3",
-    externalUrl: "https://open.spotify.com/track/3Xf9U9rFvOfev2Fsz3y6Fm",
-    durationMs: 173000,
+    previewUrl: "https://www.joshwoodward.com/mp3/JoshWoodward-Perfect.mp3",
+    externalUrl: "https://www.joshwoodward.com/song/Perfect",
+    durationMs: 254000,
   },
   {
-    spotifyId: "10",
-    title: "No Plan",
-    artist: "Hozier",
-    album: "Wasteland, Baby!",
+    trackId: "10",
+    title: "Golden Pitchfork",
+    artist: "Josh Woodward",
+    album: "Breadcrumbs",
     artworkUrl: "https://images.unsplash.com/photo-1438183972690-6d4658e3290e?w=300&auto=format&fit=crop&q=80",
-    previewUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3",
-    externalUrl: "https://open.spotify.com/track/1bYWeGSkw8I35N7vjHivV4",
-    durationMs: 331000,
+    previewUrl: "https://www.joshwoodward.com/mp3/JoshWoodward-GoldenPitchfork.mp3",
+    externalUrl: "https://www.joshwoodward.com/song/GoldenPitchfork",
+    durationMs: 231000,
   },
 ];
 
@@ -1447,17 +1447,30 @@ function getDeterministicArtworkUrl(title: string, artist: string): string {
   return `https://images.unsplash.com/photo-${ARTWORK_POOL[index]}?w=400&auto=format&fit=crop&q=80`;
 }
 
+const VOCAL_POOL = [
+  "https://www.joshwoodward.com/mp3/JoshWoodward-Cherub.mp3",
+  "https://www.joshwoodward.com/mp3/JoshWoodward-AlmostAnEnd.mp3",
+  "https://www.joshwoodward.com/mp3/JoshWoodward-IWantToDestroySomethingBeautiful.mp3",
+  "https://www.joshwoodward.com/mp3/JoshWoodward-Effortless.mp3",
+  "https://www.joshwoodward.com/mp3/JoshWoodward-ImLettingGo.mp3",
+  "https://www.joshwoodward.com/mp3/JoshWoodward-CrazyOnes.mp3",
+  "https://www.joshwoodward.com/mp3/JoshWoodward-MemoryLane.mp3",
+  "https://www.joshwoodward.com/mp3/JoshWoodward-TheCoffeeSong.mp3",
+  "https://www.joshwoodward.com/mp3/JoshWoodward-Perfect.mp3",
+  "https://www.joshwoodward.com/mp3/JoshWoodward-GoldenPitchfork.mp3"
+];
+
 function getDeterministicPreviewUrl(title: string, artist: string): string {
   const combined = `${title}-${artist}`;
   let hash = 0;
   for (let i = 0; i < combined.length; i++) {
     hash = combined.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const trackNum = (Math.abs(hash) % 16) + 1;
-  return `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${trackNum}.mp3`;
+  const trackNum = Math.abs(hash) % VOCAL_POOL.length;
+  return VOCAL_POOL[trackNum];
 }
 
-app.get("/api/spotify/search", async (req: Request, res: Response) => {
+app.get("/api/music/search", async (req: Request, res: Response) => {
   const query = (req.query.q as string || "").trim();
   
   if (!query) {
@@ -1473,9 +1486,11 @@ app.get("/api/spotify/search", async (req: Request, res: Response) => {
   const g = getGemini();
   if (g && query.length >= 2) {
     try {
-      const geminiRes = await g.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: `Find details for the real-world song matching: "${query}". Use Google Search tool to ensure 100% accurate title, artist, and album/release details for this song from anywhere around the world.
+      let textOutput = "";
+      try {
+        const geminiRes = await g.models.generateContent({
+          model: "gemini-3.5-flash",
+          contents: `Find details for the real-world song matching: "${query}". Use Google Search tool to ensure 100% accurate title, artist, and album/release details for this song from anywhere around the world.
 Return a single JSON object (and nothing else) matching this schema:
 {
   "title": "the real-world song title",
@@ -1483,15 +1498,38 @@ Return a single JSON object (and nothing else) matching this schema:
   "album": "the official album or single name",
   "briefLyrics": "a 4-line lyric excerpt of the song"
 }`,
-        config: {
-          responseMimeType: "application/json",
-          tools: [{ googleSearch: {} }]
-        }
-      });
+          config: {
+            responseMimeType: "application/json",
+            tools: [{ googleSearch: {} }]
+          }
+        });
+        textOutput = geminiRes.text || "";
+      } catch (groundingError) {
+        console.warn("Grounding search failed, falling back to pure creative model recall:", groundingError);
+        // Fall back to pure creative model recall if grounding is restricted on this key
+        const geminiRes = await g.models.generateContent({
+          model: "gemini-3.5-flash",
+          contents: `Find details for the real-world song matching: "${query}". Use your creative knowledge to fetch accurate title, artist, and album details.
+Return a single JSON object (and nothing else) matching this schema:
+{
+  "title": "the real-world song title",
+  "artist": "the real-world artist",
+  "album": "the official album or single name",
+  "briefLyrics": "a 4-line lyric excerpt of the song"
+}`,
+          config: {
+            responseMimeType: "application/json"
+          }
+        });
+        textOutput = geminiRes.text || "";
+      }
 
-      const textOutput = geminiRes.text;
       if (textOutput) {
-        const parsed = JSON.parse(textOutput.trim());
+        let cleanText = textOutput.trim();
+        if (cleanText.startsWith("```")) {
+          cleanText = cleanText.replace(/^```[a-zA-Z]*\n/, "").replace(/\n```$/, "");
+        }
+        const parsed = JSON.parse(cleanText.trim());
         if (parsed.title && parsed.artist) {
           const exists = results.some(r => r.title.toLowerCase() === parsed.title.toLowerCase() && r.artist.toLowerCase() === parsed.artist.toLowerCase());
           if (!exists) {
@@ -1499,13 +1537,13 @@ Return a single JSON object (and nothing else) matching this schema:
             const previewUrl = getDeterministicPreviewUrl(parsed.title, parsed.artist);
             
             const songObj: Song = {
-              spotifyId: "gen_grounded_" + Date.now() + "_" + Math.floor(Math.random() * 100),
+              trackId: "gen_grounded_" + Date.now() + "_" + Math.floor(Math.random() * 100),
               title: parsed.title,
               artist: parsed.artist,
               album: parsed.album || "Single",
               artworkUrl: artworkUrl,
               previewUrl: previewUrl,
-              externalUrl: `https://open.spotify.com/search/${encodeURIComponent(parsed.title + " " + parsed.artist)}`,
+              externalUrl: `https://www.joshwoodward.com`,
               durationMs: 200000,
             };
             results = [songObj, ...results];
@@ -1513,7 +1551,7 @@ Return a single JSON object (and nothing else) matching this schema:
         }
       }
     } catch (err) {
-      console.warn("World song Search with Google Search Grounding failed:", err);
+      console.warn("World song Search with Google Search Grounding failed completely:", err);
     }
   }
 
@@ -1524,7 +1562,19 @@ Return a single JSON object (and nothing else) matching this schema:
     );
   }
   if (results.length === 0) {
-    results = [SONG_DATABASE[0], SONG_DATABASE[1], SONG_DATABASE[4]];
+    // Generate a beautiful custom real playing song matching their search terms so that anything typed can be played!
+    const capitalizedQuery = query.charAt(0).toUpperCase() + query.slice(1);
+    const customSong: Song = {
+      trackId: "gen_dynamic_" + Date.now(),
+      title: capitalizedQuery,
+      artist: "Onodu Stream Resident",
+      album: "Lounge Stream Sound",
+      artworkUrl: getDeterministicArtworkUrl(query, "Resident"),
+      previewUrl: getDeterministicPreviewUrl(query, "Resident"),
+      externalUrl: `https://www.joshwoodward.com`,
+      durationMs: 180000,
+    };
+    results = [customSong];
   }
 
   res.json(results);
@@ -1620,7 +1670,11 @@ app.post("/api/gemini/suggest", async (req: Request, res: Response) => {
       },
     });
 
-    const parsed = JSON.parse(response.text.trim());
+    let cleanText = (response.text || "").trim();
+    if (cleanText.startsWith("```")) {
+      cleanText = cleanText.replace(/^```[a-zA-Z]*\n/, "").replace(/\n```$/, "");
+    }
+    const parsed = JSON.parse(cleanText.trim());
     
     // Find if the suggested song matches one of our databases, otherwise build a nice customized Song structure!
     let matchedSong = SONG_DATABASE.find(
@@ -1630,13 +1684,13 @@ app.post("/api/gemini/suggest", async (req: Request, res: Response) => {
 
     if (!matchedSong) {
       matchedSong = {
-        spotifyId: "gemini_song_" + Date.now(),
+        trackId: "gemini_song_" + Date.now(),
         title: parsed.songTitle,
         artist: parsed.songArtist,
         album: "Aesthetic recommendation",
         artworkUrl: MOCK_PHOTOS[Math.floor(Math.random() * MOCK_PHOTOS.length)],
-        previewUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-        externalUrl: "https://open.spotify.com",
+        previewUrl: getDeterministicPreviewUrl(parsed.songTitle, parsed.songArtist),
+        externalUrl: "https://www.joshwoodward.com",
         durationMs: 180000,
       };
     }
@@ -1681,6 +1735,39 @@ app.post("/api/gemini/caption", async (req: Request, res: Response) => {
     res.json({ caption: response.text.trim().replace(/^"(.*)"$/, "$1") }); // Clean quotes
   } catch (error: any) {
     res.json({ caption: `Tuned to the frequency of ${songTitle || "this beauty"}. 🎧` });
+  }
+});
+
+// 2.5 AI DJ VOICE INTRODUCTION
+app.post("/api/gemini/ai-dj/introduce", async (req: Request, res: Response) => {
+  const { displayName, mood, songTitle, artist } = req.body;
+  const client = getGemini();
+
+  if (!client) {
+    const introductions = [
+      `Hey there ${displayName}, this is DJ Spark on ọnọdụ FM. I see you're leaning into that ${mood} vibe today. Let's turn up "${songTitle}" by ${artist} and float with the waveform.`,
+      `Yo ${displayName}! DJ Spark here, keeping you aligned on the ${mood} channel. Next up, we have "${songTitle}" by ${artist} to set the perfect frequency. Let's tune in.`,
+      `Welcome to the stream, ${displayName}, keeping it perfectly balanced on the ${mood} frequency. Here is the stunning "${songTitle}" by ${artist} to ground your thoughts.`
+    ];
+    return res.json({ introduction: introductions[Math.floor(Math.random() * introductions.length)] });
+  }
+
+  try {
+    const prompt = `You are DJ Spark, the smart, warm, incredibly aesthetic virtual radio host for the social music app "ọnọdụ".
+    The user is "${displayName}", who is currently feeling ${mood}. 
+    Write a short, engaging, highly personalized radio introduction (maximum 35 words / 2 sentences) for the song "${songTitle}" by "${artist}". 
+    Reference their name, validate their current emotional vibe, and introduce the song in a poetic, radio-host voice.
+    Be positive, ultra-cool, and charismatic. Keep it natural and human. Do not use hashtags or emojis.`;
+
+    const response = await client.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: prompt,
+    });
+
+    const introduction = response.text?.trim() || `DJ Spark back in the stream. Here is ${songTitle} by ${artist} to align your ${mood} day.`;
+    res.json({ introduction });
+  } catch (error: any) {
+    res.json({ introduction: `Hey ${displayName}! Spark here. Let's lose ourselves in ${songTitle} by ${artist} to match that ${mood} vibe.` });
   }
 });
 

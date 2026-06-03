@@ -8,7 +8,7 @@ import {
   Home, Sparkles, MessageSquare, BarChart3, Shield, Star, Crown, HelpCircle,
   PlusCircle, Heart, Share2, Bookmark, Flame, Image, Search, Bell, Navigation, 
   MapPin, Edit3, Music, Check, CheckCircle, ChevronRight, X, ArrowLeft, ArrowRight, RefreshCw, Disc,
-  ListMusic, Sun, Moon, Cloud, Mail, Upload
+  ListMusic, Sun, Moon, Cloud, Mail, Upload, Play, Pause, VolumeX, Volume2, Minimize2, Maximize2
 } from "lucide-react";
 import { Post, Song, User, Comment, Story, Message, Notification, Playlist, MoodType } from "./types";
 import FeedCard from "./components/FeedCard";
@@ -335,6 +335,246 @@ export default function App() {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [initialSelectedPlaylistId, setInitialSelectedPlaylistId] = useState<string | null>(null);
 
+  // --- Real-time Persistent Global Player Engine States ---
+  const [globalSong, setGlobalSong] = useState<Song | null>(null);
+  const [isGlobalPlaying, setIsGlobalPlaying] = useState<boolean>(false);
+  const [isPlayerMinimized, setIsPlayerMinimized] = useState<boolean>(false);
+  const [globalVolume, setGlobalVolume] = useState<number>(0.85);
+  const [isGlobalMuted, setIsGlobalMuted] = useState<boolean>(false);
+  const [globalCurrentTime, setGlobalCurrentTime] = useState<number>(0);
+  const [globalDuration, setGlobalDuration] = useState<number>(1);
+  const mainAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // --- Real-time Co-listening Lounge & AI DJ Radio States ---
+  const [activeStationId, setActiveStationId] = useState<string | null>(null);
+  const [sharedRoomListeners, setSharedRoomListeners] = useState<number>(0);
+  const [floatingEmojis, setFloatingEmojis] = useState<{ id: string; char: string; left: number }[]>([]);
+  const [sharedLoungeChat, setSharedLoungeChat] = useState<{
+    id: string;
+    username: string;
+    displayName: string;
+    avatar: string;
+    content: string;
+    timestamp: string;
+  }[]>([]);
+  const [isAiDjSpeaking, setIsAiDjSpeaking] = useState<boolean>(false);
+  const [aiDjSpeech, setAiDjSpeech] = useState<string>("");
+
+  // Play a song globally
+  const handlePlayGlobalSong = (song: Song, stationId: string | null = null) => {
+    setIsPlayerMinimized(false);
+    if (stationId) {
+      setActiveStationId(stationId);
+    } else {
+      setActiveStationId(null);
+    }
+
+    setGlobalSong(song);
+    setIsGlobalPlaying(true);
+
+    if (mainAudioRef.current) {
+      mainAudioRef.current.pause();
+    }
+
+    const audio = new Audio(song.previewUrl);
+    audio.loop = true;
+    audio.volume = isGlobalMuted ? 0 : globalVolume;
+    mainAudioRef.current = audio;
+
+    audio.addEventListener("timeupdate", () => {
+      setGlobalCurrentTime(audio.currentTime);
+    });
+    audio.addEventListener("loadedmetadata", () => {
+      setGlobalDuration(audio.duration || 180);
+    });
+
+    audio.play().catch((err) => {
+      console.warn("Global browser playback blocked or interrupted:", err);
+    });
+  };
+
+  const handlePauseGlobalSong = () => {
+    setIsGlobalPlaying(false);
+    if (mainAudioRef.current) {
+      mainAudioRef.current.pause();
+    }
+  };
+
+  const handleResumeGlobalSong = () => {
+    if (globalSong) {
+      setIsGlobalPlaying(true);
+      if (mainAudioRef.current) {
+        mainAudioRef.current.play().catch(() => {});
+      }
+    }
+  };
+
+  const handleSkipGlobal = (direction: number) => {
+    if (songsDb.length === 0) return;
+    const currentIndex = songsDb.findIndex(s => s.trackId === globalSong?.trackId);
+    let nextIndex = currentIndex + direction;
+    if (nextIndex >= songsDb.length) nextIndex = 0;
+    if (nextIndex < 0) nextIndex = songsDb.length - 1;
+    handlePlayGlobalSong(songsDb[nextIndex], activeStationId);
+  };
+
+  const handleSeekGlobal = (time: number) => {
+    setGlobalCurrentTime(time);
+    if (mainAudioRef.current) {
+      mainAudioRef.current.currentTime = time;
+    }
+  };
+
+  const handleVolumeGlobal = (vol: number) => {
+    setGlobalVolume(vol);
+    if (mainAudioRef.current) {
+      mainAudioRef.current.volume = isGlobalMuted ? 0 : vol;
+    }
+  };
+
+  const handleMuteGlobal = () => {
+    const nextMute = !isGlobalMuted;
+    setIsGlobalMuted(nextMute);
+    if (mainAudioRef.current) {
+      mainAudioRef.current.volume = nextMute ? 0 : globalVolume;
+    }
+  };
+
+  const handleTuneToAiDjRadio = async () => {
+    if (songsDb.length === 0) return;
+    
+    // Choose suitable songs
+    let matchedSongs = songsDb.filter(s => {
+      if (postMood === "Happy" || postMood === "Excited" || postMood === "Motivated") {
+        return s.title === "Blinding Lights" || s.title === "Stronger" || s.title === "Feeling Good";
+      }
+      if (postMood === "Sad" || postMood === "Heartbroken") {
+        return s.title === "Fix You" || s.title === "Ocean Eyes";
+      }
+      return s.title === "Midnight Lo-fi Vibe" || s.title === "As It Was" || s.title === "No Plan";
+    });
+    if (matchedSongs.length === 0) matchedSongs = songsDb;
+    const song = matchedSongs[Math.floor(Math.random() * matchedSongs.length)] || songsDb[0];
+
+    setIsAiDjSpeaking(true);
+    setAiDjSpeech("DJ Spark is preparing to introduce the next song matching your mood... 🎙️");
+    setActiveStationId("station_ai_radio");
+
+    try {
+      const resp = await fetch("/api/gemini/ai-dj/introduce", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          displayName: currentUser?.displayName || "Listener",
+          mood: postMood,
+          songTitle: song.title,
+          artist: song.artist
+        })
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        setAiDjSpeech(data.introduction);
+      } else {
+        setAiDjSpeech(`Hey there ${currentUser?.displayName || "Friend"}! DJ Spark here on ọnọdụ AI Radio. I see you're carrying a lovely ${postMood} vibe. Let's float with "${song.title}" by ${song.artist}. Enjoy the sync.`);
+      }
+    } catch {
+      setAiDjSpeech(`Welcome back to the stream, ${currentUser?.displayName || "Friend"}. This is DJ Spark selecting the perfect alignment for your ${postMood} day. Here is "${song.title}" by ${song.artist}. Tune in.`);
+    }
+
+    // Give 6.5 seconds of vocal monologue, then play the track
+    setTimeout(() => {
+      setIsAiDjSpeaking(false);
+      handlePlayGlobalSong(song, "station_ai_radio");
+    }, 6500);
+  };
+
+  // Simulated Co-listening Chat Rooms Comments Generator
+  useEffect(() => {
+    if (!activeStationId) {
+      setSharedRoomListeners(0);
+      setSharedLoungeChat([]);
+      return;
+    }
+
+    const sampleChats: Record<string, typeof sharedLoungeChat> = {
+      station_sun: [
+        { id: "1", username: "chloe_vibe", displayName: "Chloe Harmony", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150", content: "OMG i love this stream so much! Gold sunset hits on repeat! ☀️☀️", timestamp: "Just now" },
+        { id: "2", username: "melody_maker", displayName: "Marcus Chase", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150", content: "The bass sounds incredible. Co-listening is so satisfying right now.", timestamp: "1m ago" },
+      ],
+      station_cafe: [
+        { id: "1", username: "lofi_girl", displayName: "Luna Beats", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150", content: "Chilling to this in Paris! Dynamic late night lo-fi beats channel", timestamp: "Just now" },
+        { id: "2", username: "jazz_hands", displayName: "Miles Davis", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150", content: "Incredibly relaxing sound space, highly recommended.", timestamp: "3m ago" },
+      ],
+      station_ai_radio: [
+        { id: "1", username: "spark_fan", displayName: "Aya Tanaka", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150", content: "DJ Spark is choosing absolute banger queue today!", timestamp: "Just now" },
+        { id: "2", username: "robot_rocker", displayName: "Gearhead", avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150", content: "Wow, DJ Spark just personalized that intro for iamdbonero! Impressive!", timestamp: "Just now" },
+      ]
+    };
+
+    const roomKey = activeStationId.includes("sun") ? "station_sun" : activeStationId.includes("cafe") ? "station_cafe" : "station_ai_radio";
+    setSharedLoungeChat(sampleChats[roomKey] || []);
+    setSharedRoomListeners(Math.floor(Math.random() * 25) + 18);
+
+    const interval = setInterval(() => {
+      setSharedRoomListeners(prev => Math.max(8, prev + (Math.random() > 0.5 ? 2 : -2)));
+
+      const commentators = [
+        { username: "lucas_sound", displayName: "Lucas Foley", avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150" },
+        { username: "clara_waves", displayName: "Clara Croft", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150" },
+        { username: "retro_synth", displayName: "Kavinsky", avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150" }
+      ];
+
+      const statements = [
+        "Incredible dynamic vibrations, so good!",
+        "Who else is co-listening in sync with me?",
+        "Throwing hearts in the lounge! ❤️🎵",
+        "Pure therapeutic resonance, honestly.",
+        "Perfect song recommendations so far!",
+        "Let's sync up our vibe themes!",
+        "Onodu is officially keeping me motivated today."
+      ];
+
+      const chosenComm = commentators[Math.floor(Math.random() * commentators.length)];
+      const chosenText = statements[Math.floor(Math.random() * statements.length)];
+
+      setSharedLoungeChat(prev => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          username: chosenComm.username,
+          displayName: chosenComm.displayName,
+          avatar: chosenComm.avatar,
+          content: chosenText,
+          timestamp: "Just now"
+        }
+      ].slice(-15));
+
+      const emojiOptions = ["❤️", "🔥", "☀️", "🎉", "⚡", "✨", "🎵"];
+      const newEmoji = {
+        id: Math.random().toString(),
+        char: emojiOptions[Math.floor(Math.random() * emojiOptions.length)],
+        left: Math.floor(Math.random() * 80) + 10
+      };
+      setFloatingEmojis(prev => [...prev, newEmoji]);
+      setTimeout(() => {
+        setFloatingEmojis(prev => prev.filter(e => e.id !== newEmoji.id));
+      }, 3000);
+
+    }, 4500);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [activeStationId]);
+
+  useEffect(() => {
+    return () => {
+      if (mainAudioRef.current) {
+        mainAudioRef.current.pause();
+      }
+    };
+  }, []);
+
   // State triggers
   const [isLoading, setIsLoading] = useState(true);
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -384,7 +624,7 @@ export default function App() {
       setCustomTheme((rootUser?.isPremium) ? "royal" : "standard");
 
       // 2. Fetch standard songs list
-      const sRes = await fetch("/api/spotify/search?q=");
+      const sRes = await fetch("/api/music/search?q=");
       const sData = await sRes.json();
       setSongsDb(sData);
 
@@ -438,7 +678,7 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Post search spotify integration
+  // Post search music stream alignment
   const performPostSongSearch = async (val: string) => {
     setPostSongSearch(val);
     if (val.trim().length === 0) {
@@ -446,7 +686,7 @@ export default function App() {
       return;
     }
     try {
-      const resp = await fetch(`/api/spotify/search?q=${encodeURIComponent(val)}`);
+      const resp = await fetch(`/api/music/search?q=${encodeURIComponent(val)}`);
       const songs = await resp.json();
       setMatchedSearchSongs(songs);
     } catch {
@@ -1282,6 +1522,10 @@ export default function App() {
                         onMute={handleMuteAction}
                         onBlock={handleBlockAction}
                         onDelete={handleDeletePost}
+                        currentPlayingSong={globalSong}
+                        isPlayingGlobal={isGlobalPlaying}
+                        onPlaySong={handlePlayGlobalSong}
+                        onPauseSong={handlePauseGlobalSong}
                       />
                     ))
                   )}
@@ -1301,6 +1545,48 @@ export default function App() {
                   setSelectedSong(song);
                   setLyricsDraft("Paste lyrics dynamically to select highlights.");
                   setActiveTab("profile"); // Back to posting menu
+                }}
+                currentPlayingSong={globalSong}
+                isPlayingGlobal={isGlobalPlaying}
+                onPlaySong={handlePlayGlobalSong}
+                onPauseSong={handlePauseGlobalSong}
+                globalCurrentTime={globalCurrentTime}
+                globalDuration={globalDuration}
+                globalVolume={globalVolume}
+                isGlobalMuted={isGlobalMuted}
+                onSeekGlobal={handleSeekGlobal}
+                onVolumeGlobal={handleVolumeGlobal}
+                onMuteGlobal={handleMuteGlobal}
+                activeStationId={activeStationId}
+                sharedRoomListeners={sharedRoomListeners}
+                floatingEmojis={floatingEmojis}
+                sharedLoungeChat={sharedLoungeChat}
+                isAiDjSpeaking={isAiDjSpeaking}
+                aiDjSpeech={aiDjSpeech}
+                onTuneToAiDjRadio={handleTuneToAiDjRadio}
+                onSendLoungeReaction={(char) => {
+                  const newEmoji = {
+                    id: Math.random().toString(),
+                    char,
+                    left: Math.floor(Math.random() * 80) + 10
+                  };
+                  setFloatingEmojis(prev => [...prev, newEmoji]);
+                  setTimeout(() => {
+                    setFloatingEmojis(prev => prev.filter(e => e.id !== newEmoji.id));
+                  }, 3000);
+                }}
+                onSendLoungeChat={(text) => {
+                  setSharedLoungeChat(prev => [
+                    ...prev,
+                    {
+                      id: Date.now().toString(),
+                      username: currentUser?.username || "me",
+                      displayName: currentUser?.displayName || "Me",
+                      avatar: currentUser?.avatar || "",
+                      content: text,
+                      timestamp: "Just now"
+                    }
+                  ]);
                 }}
               />
             )}
@@ -1741,7 +2027,7 @@ export default function App() {
                               className="w-full text-xs bg-slate-900 active:scale-95 text-white hover:bg-black font-semibold py-2 px-3 rounded-full flex items-center justify-center gap-1.5"
                             >
                               <Music className="w-4 h-4 text-emerald-400" />
-                              Search Spotify Catalogue
+                              Search Music Stream Catalogue
                             </button>
 
                             {searchSongOpen && (
@@ -1755,7 +2041,7 @@ export default function App() {
                                 />
                                 {matchedSearchSongs.map((s) => (
                                   <button
-                                    key={s.spotifyId}
+                                    key={s.trackId}
                                     type="button"
                                     onClick={() => {
                                       setSelectedSong(s);
@@ -1971,6 +2257,10 @@ export default function App() {
                             onComment={handleCommentSubmit}
                             onRepost={handleRepostSubmit}
                             onDelete={handleDeletePost}
+                            currentPlayingSong={globalSong}
+                            isPlayingGlobal={isGlobalPlaying}
+                            onPlaySong={handlePlayGlobalSong}
+                            onPauseSong={handlePauseGlobalSong}
                           />
                         ))}
                     </div>
@@ -2015,6 +2305,10 @@ export default function App() {
                 songsDb={songsDb}
                 initialSelectedPlaylistId={initialSelectedPlaylistId}
                 onClearInitialPlaylistId={() => setInitialSelectedPlaylistId(null)}
+                currentPlayingSong={globalSong}
+                isPlayingGlobal={isGlobalPlaying}
+                onPlaySong={handlePlayGlobalSong}
+                onPauseSong={handlePauseGlobalSong}
               />
             )}
 
@@ -2082,6 +2376,272 @@ export default function App() {
           </button>
 
         </nav>
+
+        {/* ================= GLOBAL REAL-TIME AUDIO PLAYER ================= */}
+        {globalSong && (
+          isPlayerMinimized ? (
+            /* Minimized Player View - Small floating badge */
+            <div 
+              className={`fixed bottom-[76px] md:bottom-6 right-4 z-40 p-2.5 rounded-2xl shadow-2xl border flex items-center gap-3 transition-all duration-300 hover:scale-[1.03] ${
+                isDarkMode 
+                  ? "bg-slate-900/95 border-slate-800 text-white backdrop-blur-md" 
+                  : "bg-white/95 border-gray-150 text-slate-900 backdrop-blur-md"
+              }`}
+              style={{ minWidth: "190px", maxWidth: "260px" }}
+            >
+              <div 
+                className="relative w-9 h-9 rounded-full overflow-hidden shrink-0 shadow border border-white/10 cursor-pointer"
+                onClick={() => setIsPlayerMinimized(false)}
+                title="Expand Music Player"
+              >
+                <img 
+                  src={globalSong.artworkUrl} 
+                  alt={globalSong.title} 
+                  className={`w-full h-full object-cover ${isGlobalPlaying ? "animate-[spin_6s_linear_infinite]" : "scale-95"}`}
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+
+              {/* Text details */}
+              <div 
+                className="min-w-0 flex-1 cursor-pointer" 
+                onClick={() => setIsPlayerMinimized(false)} 
+                title="Expand Music Player"
+              >
+                <p className="font-display font-semibold text-[11px] truncate leading-tight">
+                  {globalSong.title}
+                </p>
+                <span className="text-[9px] text-gray-400 block truncate">{globalSong.artist}</span>
+              </div>
+
+              {/* Controls */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button 
+                  onClick={isGlobalPlaying ? handlePauseGlobalSong : handleResumeGlobalSong}
+                  className="w-6 h-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full flex items-center justify-center transition-all shadow-md active:scale-90 cursor-pointer"
+                  title={isGlobalPlaying ? "Pause" : "Play"}
+                >
+                  {isGlobalPlaying ? (
+                    <Pause className="w-2.5 h-2.5 text-white fill-current" />
+                  ) : (
+                    <Play className="w-2.5 h-2.5 text-white fill-current ml-0.5" />
+                  )}
+                </button>
+
+                <button 
+                  onClick={() => setIsPlayerMinimized(false)}
+                  className="p-1 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-full cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800"
+                  title="Expand Player"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    handlePauseGlobalSong();
+                    setGlobalSong(null);
+                    setActiveStationId(null);
+                  }}
+                  className="p-1 text-gray-400 hover:text-red-500 rounded-full cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800"
+                  title="Cancel Music"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Full Audio Player Bar */
+            <div 
+              className={`fixed bottom-16 md:bottom-0 left-0 right-0 h-20 border-t backdrop-blur-lg z-30 transition-all shadow-2xl flex items-center px-4 md:px-8 justify-between gap-4 ${
+                isDarkMode 
+                  ? "bg-slate-950/90 border-slate-800/85 text-white" 
+                  : "bg-white/95 border-gray-150 text-slate-900"
+              }`}
+            >
+              {/* Left Track Branding info */}
+              <div className="flex items-center gap-3.5 min-w-0 max-w-[280px]">
+                <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 shadow-lg border border-white/10">
+                  <img 
+                    src={globalSong.artworkUrl} 
+                    alt={globalSong.title} 
+                    className={`w-full h-full object-cover transition-transform duration-500 ${isGlobalPlaying ? "animate-[spin_8s_linear_infinite]" : "scale-95"}`}
+                    referrerPolicy="no-referrer"
+                  />
+                  
+                  {isGlobalPlaying && (
+                    <div className="absolute inset-0 bg-black/15 flex items-center justify-center">
+                      <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-ping" />
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <h5 className="font-display font-semibold text-xs md:text-sm truncate leading-tight flex items-center gap-1.5">
+                    {globalSong.title}
+                  </h5>
+                  <span className="text-[10px] text-gray-400 block truncate mt-0.5 font-medium">{globalSong.artist}</span>
+                  
+                  {/* Station channel tracker indicator */}
+                  {activeStationId && (
+                    <div className="flex items-center gap-1 mt-1 shrink-0">
+                      <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                      <span className="text-[8px] tracking-wider uppercase text-red-500 font-bold font-mono">
+                        {activeStationId === "station_ai_radio" ? "AI Radio Active 📻" : "Live Room Sync 🎧"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Central Stream Playback Controls */}
+              <div className="flex-1 flex flex-col items-center max-w-xl">
+                {/* Monologue AI Subtitles Sheet */}
+                {isAiDjSpeaking && (
+                  <div className="absolute bottom-22 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-full md:max-w-md bg-indigo-950/95 border border-indigo-500/35 backdrop-blur-md p-3 rounded-2xl shadow-xl z-50 text-center animate-bounce">
+                    <span className="text-[9px] bg-indigo-500 text-white font-extrabold tracking-widest uppercase px-2 py-0.5 rounded-md inline-block mb-1">
+                      📻 DJ Spark Live
+                    </span>
+                    <p className="text-white font-mono italic text-[11px] leading-relaxed select-none">
+                      "{aiDjSpeech}"
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-5">
+                  {/* Skip back */}
+                  <button 
+                    onClick={() => handleSkipGlobal(-1)}
+                    className="p-1.5 text-gray-400 hover:text-slate-800 dark:hover:text-white transition-colors cursor-pointer"
+                    title="Previous song"
+                  >
+                    <ArrowLeft className="w-5 h-5 fill-current" />
+                  </button>
+
+                  {/* Main Action trigger play/pause */}
+                  <button 
+                    onClick={isGlobalPlaying ? handlePauseGlobalSong : handleResumeGlobalSong}
+                    className="w-10 h-10 bg-indigo-650 hover:bg-indigo-700 text-white rounded-full flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer"
+                  >
+                    {isGlobalPlaying ? (
+                      <Pause className="w-4.5 h-4.5 text-white fill-current" />
+                    ) : (
+                      <Play className="w-4.5 h-4.5 text-white fill-current ml-0.5" />
+                    )}
+                  </button>
+
+                  {/* Skip next */}
+                  <button 
+                    onClick={() => handleSkipGlobal(1)}
+                    className="p-1.5 text-gray-400 hover:text-slate-800 dark:hover:text-white transition-colors cursor-pointer"
+                    title="Next song"
+                  >
+                    <ArrowRight className="w-5 h-5 fill-current" />
+                  </button>
+                </div>
+
+                {/* Progress Line bar */}
+                <div className="w-full flex items-center gap-3 mt-1.5 text-[10px] font-mono font-medium text-gray-400">
+                  <span className="w-8 text-right shrink-0">{Math.floor(globalCurrentTime / 60)}:{Math.floor(globalCurrentTime % 60) < 10 ? "0" : ""}{Math.floor(globalCurrentTime % 60)}</span>
+                  
+                  <input 
+                    type="range"
+                    min="0"
+                    max={globalDuration}
+                    step="0.5"
+                    value={globalCurrentTime}
+                    onChange={(e) => handleSeekGlobal(parseFloat(e.target.value))}
+                    className="flex-1 h-1.5 rounded-lg appearance-none bg-indigo-150 dark:bg-slate-800 accent-indigo-600 focus:outline-none cursor-pointer"
+                  />
+
+                  <span className="w-8 shrink-0">{Math.floor(globalDuration / 60)}:{Math.floor(globalDuration % 60) < 10 ? "0" : ""}{Math.floor(globalDuration % 60)}</span>
+                </div>
+              </div>
+
+              {/* Right side Device adjustment sliders and View State triggers */}
+              <div className="flex items-center gap-4 shrink-0">
+                <div className="hidden sm:flex items-center gap-3">
+                  {/* Co-listening Reactions */}
+                  {activeStationId && (
+                    <div className="flex items-center gap-1.5 mr-2">
+                      <button 
+                        onClick={() => {
+                          const newEmoji = {
+                            id: Math.random().toString(),
+                            char: "❤️",
+                            left: Math.floor(Math.random() * 80) + 10
+                          };
+                          setFloatingEmojis(prev => [...prev, newEmoji]);
+                          setTimeout(() => setFloatingEmojis(prev => prev.filter(e => e.id !== newEmoji.id)), 3000);
+                        }}
+                        className="p-1.5 bg-gray-50 dark:bg-slate-900 border rounded-full hover:scale-110 active:scale-95 text-xs transition-all cursor-pointer"
+                        title="Send Heart"
+                      >
+                        ❤️
+                      </button>
+                      <button 
+                        onClick={() => {
+                          const newEmoji = {
+                            id: Math.random().toString(),
+                            char: "🔥",
+                            left: Math.floor(Math.random() * 80) + 10
+                          };
+                          setFloatingEmojis(prev => [...prev, newEmoji]);
+                          setTimeout(() => setFloatingEmojis(prev => prev.filter(e => e.id !== newEmoji.id)), 3000);
+                        }}
+                        className="p-1.5 bg-gray-50 dark:bg-slate-900 border rounded-full hover:scale-110 active:scale-95 text-xs transition-all cursor-pointer"
+                        title="Send Fire"
+                      >
+                        🔥
+                      </button>
+                    </div>
+                  )}
+
+                  <button 
+                    onClick={handleMuteGlobal}
+                    className="p-1.5 text-gray-400 hover:text-slate-800 dark:hover:text-white transition-colors cursor-pointer"
+                  >
+                    {isGlobalMuted ? (
+                      <VolumeX className="w-4.5 h-4.5" />
+                    ) : (
+                      <Volume2 className="w-4.5 h-4.5" />
+                    )}
+                  </button>
+
+                  <input 
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={isGlobalMuted ? 0 : globalVolume}
+                    onChange={(e) => handleVolumeGlobal(parseFloat(e.target.value))}
+                    className="w-20 md:w-24 h-1 rounded-lg appearance-none bg-indigo-150 dark:bg-slate-800 accent-indigo-600 focus:outline-none cursor-pointer"
+                  />
+                </div>
+
+                {/* Always visible player view state controls */}
+                <div className="flex items-center gap-1.5 pl-2.5 border-l border-gray-250 dark:border-slate-800">
+                  <button 
+                    onClick={() => setIsPlayerMinimized(true)}
+                    className="p-1.5 text-gray-400 hover:text-indigo-650 hover:bg-gray-100 dark:hover:bg-slate-850 rounded-full transition-all cursor-pointer"
+                    title="Minimize Player"
+                  >
+                    <Minimize2 className="w-5 h-5" />
+                  </button>
+                  <button 
+                    onClick={() => {
+                      handlePauseGlobalSong();
+                      setGlobalSong(null);
+                      setActiveStationId(null);
+                    }}
+                    className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-gray-100 dark:hover:bg-slate-850 rounded-full transition-all cursor-pointer"
+                    title="Close Player"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        )}
 
       </div>
 
