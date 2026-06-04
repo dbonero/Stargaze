@@ -554,7 +554,7 @@ export default function WorkspaceHub({ isDarkMode, playlists }: WorkspaceHubProp
                   No active backup files located in this capsule.
                 </div>
               ) : (
-                <div className="space-y-2.5 max-h-[380px] overflow-y-auto scrollbar-none pr-1">
+                <div className="space-y-2.5 max-h-[35vh] sm:max-h-[42vh] md:max-h-[380px] overflow-y-auto scrollbar-none pr-1">
                   {driveFiles.map((file) => (
                     <div key={file.id} className="p-3 bg-slate-950/60 hover:bg-slate-950 border border-slate-800/50 rounded-2xl transition-all flex items-center justify-between gap-3 group text-left">
                       <div className="min-w-0 flex items-start gap-2.5">

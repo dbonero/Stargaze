@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { 
   Send, Mic, Image, Music, CheckCheck, Play, X, 
-  Users, Plus, MessageSquare, Globe, ChevronLeft, ChevronRight, Menu, Search
+  Users, Plus, MessageSquare, Globe, ChevronLeft, ChevronRight, Menu, Search, ArrowLeft
 } from "lucide-react";
 import { Message, Song, User, GroupMessage, MusicGroup } from "../types";
 
@@ -38,6 +38,7 @@ export default function DirectMessages({
   const [activeTab, setActiveTab] = useState<"dm" | "groups">("dm");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [sidebarSearchQuery, setSidebarSearchQuery] = useState("");
+  const [showMobileChat, setShowMobileChat] = useState<boolean>(false);
 
   // Direct Messages (Peer-to-Peer) states
   const [activeFriendId, setActiveFriendId] = useState<string>("chloe_vibe");
@@ -304,7 +305,7 @@ export default function DirectMessages({
   });
 
   return (
-    <div className={`border rounded-3xl overflow-hidden shadow-sm h-[650px] flex flex-col font-sans transition-all duration-300 ${
+    <div className={`border rounded-3xl overflow-hidden shadow-sm h-[calc(100vh-13rem)] md:h-[680px] min-h-[480px] flex flex-col font-sans transition-all duration-300 ${
       isDarkMode 
         ? "bg-slate-900 border-slate-800 text-white" 
         : "bg-white border-gray-150 text-slate-900"
@@ -315,9 +316,11 @@ export default function DirectMessages({
         
         {/* ================= LEFT SIDE: DE-CONGESTED DYNAMIC DRAWER SIDEBAR ================= */}
         <div className={`transition-all duration-300 ease-in-out border-r flex flex-col shrink-0 ${
+          showMobileChat ? "hidden md:flex" : "flex w-full md:w-auto"
+        } ${
           isSidebarCollapsed 
-            ? "w-16 md:w-20" 
-            : "w-56 md:w-64"
+            ? "md:w-20" 
+            : "md:w-64"
         } ${isDarkMode ? "bg-slate-950/40 border-slate-850" : "bg-slate-50/20 border-gray-100"}`}>
           
           {/* A. Dynamic Tab switcher styled inside Left Sidebar */}
@@ -325,7 +328,7 @@ export default function DirectMessages({
             /* Mini Icon column switcher when collapsed */
             <div className={`p-3 border-b flex flex-col items-center gap-3 shrink-0 ${isDarkMode ? "border-slate-850" : "border-gray-100"}`}>
               <button 
-                onClick={() => { setActiveTab("dm"); setSidebarSearchQuery(""); }}
+                onClick={() => { setActiveTab("dm"); setSidebarSearchQuery(""); setShowMobileChat(false); }}
                 className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                   activeTab === "dm" 
                     ? (isDarkMode ? "bg-indigo-650 text-white shadow-md shadow-indigo-900/40" : "bg-indigo-600 text-white shadow-sm") 
@@ -336,7 +339,7 @@ export default function DirectMessages({
                 <MessageSquare className="w-4 h-4" />
               </button>
               <button 
-                onClick={() => { setActiveTab("groups"); setSidebarSearchQuery(""); }}
+                onClick={() => { setActiveTab("groups"); setSidebarSearchQuery(""); setShowMobileChat(false); }}
                 className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                   activeTab === "groups" 
                     ? (isDarkMode ? "bg-indigo-650 text-white shadow-md shadow-indigo-900/40" : "bg-indigo-600 text-white shadow-sm") 
@@ -352,7 +355,7 @@ export default function DirectMessages({
             <div className={`p-3 border-b flex flex-col shrink-0 gap-2.5 ${isDarkMode ? "border-slate-850" : "border-gray-100"}`}>
               <div className={`flex p-1 rounded-xl w-full ${isDarkMode ? "bg-slate-900/90" : "bg-gray-150/40"}`}>
                 <button 
-                  onClick={() => { setActiveTab("dm"); setSidebarSearchQuery(""); }}
+                  onClick={() => { setActiveTab("dm"); setSidebarSearchQuery(""); setShowMobileChat(false); }}
                   className={`flex-1 flex items-center justify-center gap-1.5 text-[11px] font-bold py-1.5 px-1.5 rounded-lg transition-all cursor-pointer ${
                     activeTab === "dm" 
                       ? (isDarkMode ? "bg-slate-800 text-white shadow-sm" : "bg-white text-indigo-750 shadow-xs") 
@@ -363,7 +366,7 @@ export default function DirectMessages({
                   DMs
                 </button>
                 <button 
-                  onClick={() => { setActiveTab("groups"); setSidebarSearchQuery(""); }}
+                  onClick={() => { setActiveTab("groups"); setSidebarSearchQuery(""); setShowMobileChat(false); }}
                   className={`flex-1 flex items-center justify-center gap-1.5 text-[11px] font-bold py-1.5 px-1.5 rounded-lg transition-all cursor-pointer ${
                     activeTab === "groups" 
                       ? (isDarkMode ? "bg-slate-800 text-white shadow-sm" : "bg-white text-indigo-750 shadow-xs") 
@@ -412,14 +415,14 @@ export default function DirectMessages({
               ) : (
                 filteredUsers.map((u) => {
                   const isSelected = u.id === activeFriendId;
-                  
-                  if (isSidebarCollapsed) {
+                                     if (isSidebarCollapsed) {
                     return (
                       <button
                         key={u.id}
                         onClick={() => {
                           setActiveFriendId(u.id);
                           fetchDmMessages(u.id);
+                          setShowMobileChat(true);
                         }}
                         className={`w-full py-3 flex justify-center relative transition-all cursor-pointer ${
                           isSelected ? "bg-indigo-50/40 dark:bg-slate-800/30" : "hover:bg-gray-100/50 dark:hover:bg-slate-800/10"
@@ -447,6 +450,7 @@ export default function DirectMessages({
                       onClick={() => {
                         setActiveFriendId(u.id);
                         fetchDmMessages(u.id);
+                        setShowMobileChat(true);
                       }}
                       className={`w-[92%] mx-auto mb-1 p-2 flex gap-2.5 items-center rounded-xl transition-all cursor-pointer text-left ${
                         isSelected 
@@ -497,6 +501,7 @@ export default function DirectMessages({
                         onClick={() => {
                           setActiveGroupId(group.id);
                           fetchGroupMessages(group.id);
+                          setShowMobileChat(true);
                         }}
                         className={`w-full py-3 flex justify-center relative transition-all cursor-pointer ${
                           isSelected ? "bg-indigo-50/40 dark:bg-slate-800/30" : "hover:bg-gray-100/50 dark:hover:bg-slate-800/10"
@@ -521,6 +526,7 @@ export default function DirectMessages({
                       onClick={() => {
                         setActiveGroupId(group.id);
                         fetchGroupMessages(group.id);
+                        setShowMobileChat(true);
                       }}
                       className={`w-[92%] mx-auto mb-1 p-2 flex gap-2.5 items-center rounded-xl transition-all cursor-pointer text-left ${
                         isSelected 
@@ -580,7 +586,7 @@ export default function DirectMessages({
         </div>
 
         {/* ================= RIGHT SIDE: FULLY EXPANDED IMMERSIVE DIALOGUE AREA ================= */}
-        <div className="flex-1 flex flex-col min-h-0 bg-transparent">
+        <div className={`flex-1 flex flex-col min-h-0 bg-transparent ${showMobileChat ? "flex" : "hidden md:flex"}`}>
           
           {/* Header Action Row */}
           {activeTab === "dm" ? (
@@ -588,9 +594,18 @@ export default function DirectMessages({
               isDarkMode ? "bg-slate-900/60 border-slate-800 text-white" : "bg-white border-gray-150 text-slate-900"
             }`}>
               <div className="flex items-center gap-2.5 min-w-0">
+                {/* Back button on mobile screens */}
+                <button
+                  onClick={() => setShowMobileChat(false)}
+                  className="md:hidden p-1.5 mr-1 rounded-lg text-indigo-500 dark:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all font-bold flex items-center justify-center cursor-pointer shrink-0"
+                  title="Back to Contact List"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+
                 <button
                   onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                  className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center ${
+                  className={`hidden md:flex p-1.5 rounded-lg transition-colors cursor-pointer items-center justify-center ${
                     isDarkMode ? "hover:bg-slate-800 text-gray-400 hover:text-white" : "hover:bg-gray-100 text-gray-400 hover:text-gray-700"
                   }`}
                   title={isSidebarCollapsed ? "Show contact list" : "Hide list (Focus Screen)"}
@@ -630,9 +645,18 @@ export default function DirectMessages({
               isDarkMode ? "bg-slate-900/60 border-slate-800 text-white" : "bg-white border-gray-150 text-slate-900"
             }`}>
               <div className="flex items-center gap-2.5 min-w-0">
+                {/* Back button on mobile screens */}
+                <button
+                  onClick={() => setShowMobileChat(false)}
+                  className="md:hidden p-1.5 mr-1 rounded-lg text-indigo-500 dark:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all font-bold flex items-center justify-center cursor-pointer shrink-0"
+                  title="Back to Lists"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+
                 <button
                   onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                  className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center ${
+                  className={`hidden md:flex p-1.5 rounded-lg transition-colors cursor-pointer items-center justify-center ${
                     isDarkMode ? "hover:bg-slate-800 text-gray-400 hover:text-white" : "hover:bg-gray-100 text-gray-400 hover:text-gray-700"
                   }`}
                   title={isSidebarCollapsed ? "Show contact list" : "Hide list (Focus Screen)"}

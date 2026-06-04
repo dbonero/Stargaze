@@ -568,7 +568,7 @@ export default function Discovery({
               {displayedSongs.length === 0 ? (
                 <div className="py-8 text-center text-xs text-gray-400 italic">No matches locally. Type your song and hit 'Locate via AI' for global lookup!</div>
               ) : (
-                <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
+                <div className="space-y-2 max-h-[38vh] sm:max-h-[46vh] md:max-h-[460px] overflow-y-auto pr-1">
                   {displayedSongs.map((song) => (
                     <div 
                       key={song.trackId} 
