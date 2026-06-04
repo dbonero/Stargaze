@@ -856,6 +856,56 @@ app.post("/api/auth/google", (req: Request, res: Response) => {
   res.json({ success: true, user: newUser });
 });
 
+app.post("/api/auth/login", (req: Request, res: Response) => {
+  const { username } = req.body;
+  if (!username) {
+    return res.status(400).json({ error: "Username is required" });
+  }
+
+  const cleanUsername = username.trim().toLowerCase();
+
+  // Find user in memory
+  const matchedUser = Array.from(userDatabaseMap.values()).find(
+    (u) => u.username.toLowerCase() === cleanUsername
+  );
+
+  if (matchedUser) {
+    const updatedUser = {
+      ...matchedUser,
+      id: "currentUser"
+    };
+    userDatabaseMap.set("currentUser", updatedUser);
+    return res.json({ success: true, user: updatedUser });
+  } else {
+    if (cleanUsername === "explore") {
+      const explorerUser: User = {
+        id: "currentUser",
+        username: "explore",
+        displayName: "Stargazing Explorer",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+        coverPhoto: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1200&auto=format&fit=crop&q=80",
+        bio: "Temporary observer exploring the orbit. 🌌✨",
+        location: "Orbit",
+        favoriteSong: "Midnight Lo-fi Vibe by Chillhop Beats",
+        followersCount: 15,
+        followingCount: 2,
+        likesCount: 0,
+        postsCount: 0,
+        isPremium: true,
+        followingIds: ["chloe_vibe", "leo_beats"],
+        blockedIds: [],
+        mutedIds: [],
+      };
+      userDatabaseMap.set("currentUser", explorerUser);
+      return res.json({ success: true, user: explorerUser });
+    }
+    
+    return res.status(404).json({ 
+      error: `No account found with username @${username}. Try 'iamdbonero', 'chloe_vibe', 'leo_beats', or 'guitar_hero'!` 
+    });
+  }
+});
+
 app.post("/api/auth/create-account", (req: Request, res: Response) => {
   const { username, displayName, email, bio, location, favoriteSong, avatar } = req.body;
 

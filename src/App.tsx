@@ -8,7 +8,7 @@ import {
   Home, Sparkles, MessageSquare, BarChart3, Shield, Star, Crown, HelpCircle,
   PlusCircle, Heart, Share2, Bookmark, Flame, Image, Search, Bell, Navigation, 
   MapPin, Edit3, Music, Check, CheckCircle, ChevronRight, X, ArrowLeft, ArrowRight, RefreshCw, Disc,
-  ListMusic, Sun, Moon, Cloud, Mail, Upload, Play, Pause, VolumeX, Volume2, Minimize2, Maximize2
+  ListMusic, Sun, Moon, Cloud, Mail, Upload, Play, Pause, VolumeX, Volume2, Minimize2, Maximize2, LogOut, FileText
 } from "lucide-react";
 import { Post, Song, User, Comment, Story, Message, Notification, Playlist, MoodType } from "./types";
 import FeedCard from "./components/FeedCard";
@@ -172,8 +172,8 @@ export default function App() {
   const [loginInput, setLoginInput] = useState("");
   const [loginError, setLoginError] = useState("");
 
-  // Sub-modes for authentication
-  const [authMode, setAuthMode] = useState<"register" | "google">("register");
+  // Sub-modes for authentication (default to login mode first)
+  const [authMode, setAuthMode] = useState<"register" | "login" | "google">("login");
   const [registerUsername, setRegisterUsername] = useState("");
   const [registerDisplayName, setRegisterDisplayName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
@@ -182,19 +182,37 @@ export default function App() {
   const [registerFavoriteSong, setRegisterFavoriteSong] = useState("");
   const [registerAvatar, setRegisterAvatar] = useState("https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80");
 
+  const handleCustomLogin = async (usernameStr: string) => {
+    if (!usernameStr.trim()) {
+      setLoginError("Please enter a username or select a profile below.");
+      return;
+    }
+    try {
+      setLoginError("");
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: usernameStr })
+      });
+      if (res.ok) {
+        setIsLoggedIn(true);
+        try {
+          localStorage.setItem("isLoggedIn", "true");
+          localStorage.setItem("savedUsername", usernameStr.trim());
+        } catch {}
+        await bootstrapState();
+      } else {
+        const data = await res.json();
+        setLoginError(data.error || "Login failed.");
+      }
+    } catch {
+      setLoginError("Communication with authentication server failed.");
+    }
+  };
+
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginInput.trim().toLowerCase() === "explore") {
-      setIsLoggedIn(true);
-      try {
-        localStorage.setItem("isLoggedIn", "true");
-      } catch {}
-      setLoginError("");
-    } else if (!loginInput.trim()) {
-      setLoginError("Please enter the login phrase 'explore' to enter.");
-    } else {
-      setLoginError("Incorrect phrase. Hint: Type 'explore' to enter the stars.");
-    }
+    handleCustomLogin(loginInput);
   };
 
   const handleGoogleLogin = async (email: string, name: string, avatar: string) => {
@@ -344,6 +362,39 @@ export default function App() {
   const [globalCurrentTime, setGlobalCurrentTime] = useState<number>(0);
   const [globalDuration, setGlobalDuration] = useState<number>(1);
   const mainAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Background Interactive Lyrics States
+  const [isLyricsOpen, setIsLyricsOpen] = useState<boolean>(false);
+  const [globalLyrics, setGlobalLyrics] = useState<string | null>(null);
+  const [isLyricsLoading, setIsLyricsLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!globalSong) {
+      setGlobalLyrics(null);
+      setIsLyricsOpen(false);
+      return;
+    }
+
+    const fetchLyricsBackground = async () => {
+      setIsLyricsLoading(true);
+      setGlobalLyrics(null);
+      try {
+        const resp = await fetch(`/api/songs/lyrics?title=${encodeURIComponent(globalSong.title)}&artist=${encodeURIComponent(globalSong.artist)}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          setGlobalLyrics(data.lyrics || "Lyrics are preparing, tune in soon...");
+        } else {
+          setGlobalLyrics("No lyrics found for this beautiful track yet.");
+        }
+      } catch {
+        setGlobalLyrics("Error compiling official lyrics from the Google AI ground search.");
+      } finally {
+        setIsLyricsLoading(false);
+      }
+    };
+
+    fetchLyricsBackground();
+  }, [globalSong?.trackId]);
 
   // --- Real-time Co-listening Lounge & AI DJ Radio States ---
   const [activeStationId, setActiveStationId] = useState<string | null>(null);
@@ -1019,8 +1070,112 @@ export default function App() {
             </p>
           </div>
 
-          {/* Direct Stargaze Registration Form */}
+          {/* Interactive Navigation Tabs */}
+          <div className="flex bg-slate-900 p-1 rounded-2xl border border-slate-800 max-w-sm mx-auto">
+            <button
+              type="button"
+              onClick={() => { setAuthMode("login"); setLoginError(""); }}
+              className={`flex-1 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer ${
+                authMode === "login" 
+                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20" 
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAuthMode("register"); setLoginError(""); }}
+              className={`flex-1 py-1.5 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer ${
+                authMode === "register" 
+                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20" 
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              Join Orbit
+            </button>
+          </div>
 
+          {/* SIGN IN FORM VIEW */}
+          {authMode === "login" && (
+            <div className="space-y-4 text-left">
+              <form onSubmit={handleLoginSubmit} className="bg-slate-900/60 border border-slate-850 rounded-3xl p-6 shadow-xl backdrop-blur-md space-y-4">
+                <div>
+                  <h3 className="text-xs text-slate-200 font-bold uppercase tracking-wider block">Access Your Orbit</h3>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Enter your handle username to log in.</p>
+                </div>
+
+                <div className="space-y-1">
+                  <label htmlFor="login-username" className="text-[9.5px] text-slate-400 font-bold uppercase block">Username Handle</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-slate-500 text-xs font-mono">@</span>
+                    <input
+                      id="login-username"
+                      type="text"
+                      placeholder="iamdbonero"
+                      value={loginInput}
+                      onChange={(e) => setLoginInput(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-7 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-white placeholder-slate-700 font-mono"
+                    />
+                  </div>
+                </div>
+
+                {loginError && (
+                  <p className="text-[10px] text-red-400 text-center font-medium animate-pulse">{loginError}</p>
+                )}
+
+                <button
+                  type="submit"
+                  className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl text-xs tracking-wide shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <span>Sign In</span>
+                  <CheckCircle className="w-4 h-4" />
+                </button>
+              </form>
+
+              {/* Quick Login Preset Accounts */}
+              <div className="bg-slate-900/40 border border-slate-850 rounded-3xl p-5 shadow-sm space-y-3.5">
+                <div>
+                  <h4 className="text-[10px] text-slate-300 font-bold uppercase tracking-widest flex items-center gap-1">
+                    <Crown className="w-3.5 h-3.5 text-indigo-400" /> Presets Accounts
+                  </h4>
+                  <p className="text-[9px] text-slate-400 mt-0.5">Click any standard creator to log in instantly:</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { username: "iamdbonero", name: "D. Bonero", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" },
+                    { username: "chloe_vibe", name: "Chloe Chen", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150" },
+                    { username: "leo_beats", name: "Leo King", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150" },
+                    { username: "guitar_hero", name: "Marcus Vance", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" },
+                  ].map((pUser) => (
+                    <button
+                      key={pUser.username}
+                      type="button"
+                      onClick={() => {
+                        setLoginInput(pUser.username);
+                        handleCustomLogin(pUser.username);
+                      }}
+                      className="flex items-center gap-2.5 p-2 bg-slate-950/80 border border-slate-800/60 rounded-2xl hover:border-indigo-500 hover:bg-slate-900 transition-all text-left group cursor-pointer"
+                    >
+                      <img
+                        src={pUser.avatar}
+                        alt=""
+                        className="w-7 h-7 rounded-full object-cover border border-slate-800 group-hover:border-indigo-400 transition-all shrink-0"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-bold text-slate-200 truncate group-hover:text-indigo-300 transition-all">{pUser.name}</div>
+                        <div className="text-[8px] text-slate-405 font-mono truncate">@{pUser.username}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* REGISTER FORM VIEW */}
           {authMode === "register" && (
             <form onSubmit={handleRegisterSubmit} className="bg-slate-900/60 border border-slate-850 rounded-3xl p-6 shadow-xl backdrop-blur-md space-y-4 text-left">
               <div>
@@ -1145,14 +1300,14 @@ export default function App() {
                 type="submit"
                 className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl text-xs tracking-wide shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 transition-all cursor-pointer flex items-center justify-center gap-1.5"
               >
-                <span>Create ọnọdụ Account</span>
+                <span>Create Account</span>
                 <PlusCircle className="w-4 h-4" />
               </button>
             </form>
           )}
 
           <footer className="text-[10px] text-slate-500 tracking-wider">
-            Press <kbd className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400 font-mono text-[9px]">Esc</kbd> anytime inside the ecosystem to escape/logout.
+            Click a **Preset profile** or use the tabs to Sign In / Join. Escape with <kbd className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400 font-mono text-[9px]">Esc</kbd> anytime.
           </footer>
         </div>
       </div>
@@ -1351,7 +1506,7 @@ export default function App() {
               className="text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50/50 dark:hover:bg-red-950/20"
               title="Logout"
             >
-              <X className="w-4 h-4" />
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -1409,6 +1564,18 @@ export default function App() {
                 {notifications.some(n => !n.read) && (
                   <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-indigo-650 rounded-full" />
                 )}
+              </button>
+
+              {/* Mobile Quick Logout action button */}
+              <button 
+                onClick={() => {
+                  setIsLoggedIn(false);
+                  try { localStorage.setItem("isLoggedIn", "false"); } catch {}
+                }}
+                className="text-gray-400 hover:text-red-500 p-1.5 rounded-full"
+                title="Logout"
+              >
+                <LogOut className="w-4.5 h-4.5" />
               </button>
               
               {notificationOpen && (
@@ -2621,6 +2788,18 @@ export default function App() {
                 {/* Always visible player view state controls */}
                 <div className="flex items-center gap-1.5 pl-2.5 border-l border-gray-250 dark:border-slate-800">
                   <button 
+                    onClick={() => setIsLyricsOpen(!isLyricsOpen)}
+                    className={`p-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1.5 text-xs px-2.5 ${
+                      isLyricsOpen 
+                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold" 
+                        : "text-gray-400 hover:text-indigo-650 hover:bg-gray-100 dark:hover:bg-slate-850"
+                    }`}
+                    title="Toggle Song Lyrics"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span className="hidden md:inline font-bold">Lyrics</span>
+                  </button>
+                  <button 
                     onClick={() => setIsPlayerMinimized(true)}
                     className="p-1.5 text-gray-400 hover:text-indigo-650 hover:bg-gray-100 dark:hover:bg-slate-850 rounded-full transition-all cursor-pointer"
                     title="Minimize Player"
@@ -2632,6 +2811,7 @@ export default function App() {
                       handlePauseGlobalSong();
                       setGlobalSong(null);
                       setActiveStationId(null);
+                      setIsLyricsOpen(false);
                     }}
                     className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-gray-100 dark:hover:bg-slate-850 rounded-full transition-all cursor-pointer"
                     title="Close Player"
@@ -2642,6 +2822,76 @@ export default function App() {
               </div>
             </div>
           )
+        )}
+
+        {/* ================= FLOATING GLASSMORPHIC LYRICS SHEET ================= */}
+        {isLyricsOpen && globalSong && (
+          <div 
+            className={`fixed right-4 md:right-8 bottom-24 w-[350px] max-w-[calc(100vw-2rem)] h-[450px] max-h-[60vh] rounded-3xl border z-40 flex flex-col shadow-2xl transition-all animate-in slide-in-from-bottom-5 duration-300 ${
+              isDarkMode 
+                ? "bg-slate-900/95 border-indigo-500/20 text-white backdrop-blur-xl" 
+                : "bg-white/95 border-indigo-100 text-slate-900 backdrop-blur-xl"
+            }`}
+          >
+            {/* Header */}
+            <div className={`p-4 border-b flex justify-between items-center ${isDarkMode ? "border-slate-850" : "border-gray-100"}`}>
+              <div className="flex items-center gap-2 min-w-0">
+                <Music className="w-4 h-4 text-indigo-500 shrink-0" />
+                <div className="min-w-0">
+                  <h4 className="font-display font-semibold text-xs truncate leading-none">{globalSong.title}</h4>
+                  <span className="text-[9px] text-gray-400 block truncate mt-1">Live Karaoke View • {globalSong.artist}</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsLyricsOpen(false)}
+                className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 hover:text-red-500 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Content list */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 font-mono text-[11.5px] leading-relaxed">
+              {isLyricsLoading ? (
+                <div className="h-full flex flex-col items-center justify-center gap-3.5 text-center text-gray-400">
+                  <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
+                  <p className="text-[10px] max-w-[200px] leading-normal animate-pulse">Contacting Google AI Grounding Search to compile official verified lyrics sheet...</p>
+                </div>
+              ) : globalLyrics ? (
+                globalLyrics.split("\n").filter(line => line.trim().length > 0).map((line, idx) => (
+                  <div 
+                    key={idx} 
+                    className="group flex justify-between items-start gap-4 hover:bg-indigo-500/5 p-1.5 px-2 rounded-xl transition-all"
+                  >
+                    <span className="flex-1 text-slate-300 dark:text-gray-200 italic leading-snug">
+                      {line}
+                    </span>
+                    <button 
+                      onClick={() => {
+                        try {
+                          navigator.clipboard.writeText(line);
+                        } catch {}
+                      }}
+                      className="opacity-0 group-hover:opacity-100 hover:text-indigo-500 p-0.5 rounded transition-opacity shrink-0 cursor-pointer text-gray-400"
+                      title="Copy line font excerpt"
+                    >
+                      <Check className="w-3.5 h-3.5 text-emerald-500 active:scale-90" />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center text-gray-400">
+                  <Music className="w-7 h-7 text-indigo-300 animate-bounce mb-2" />
+                  <p className="text-[10px] italic">No active lyrics catalog. Stream another track to query AI grounding.</p>
+                </div>
+              )}
+            </div>
+            
+            {/* Real-time sync footer */}
+            <div className={`p-3 text-[9px] text-center tracking-wider font-semibold uppercase font-mono ${isDarkMode ? "bg-black/20 text-indigo-400 border-t border-slate-800" : "bg-gray-50 text-indigo-600 border-t border-gray-100"}`}>
+              🎸 Powered by Google Gemini Grounding
+            </div>
+          </div>
         )}
 
       </div>
